@@ -1,17 +1,4 @@
 #!/usr/bin/env python3
-"""
-Honeylab IP enrichment (Option A: standalone).
-Pulls unique source IPs from OpenSearch, enriches via AbuseIPDB + GreyNoise,
-caches results locally, writes enriched CSV.
-
-Setup:
-  pip install requests opensearch-py
-  export ABUSEIPDB_KEY=4fd1c97a3737edaf61c7d507bc75049be6e7dd710ef055a0db02d76bcb6325e60596afdbe212cf1c
-  export GREYNOISE_KEY=veOtMfTHd6lGt970u0yCW2nrnXzOGThyhIdv3ihZ91Y113Oe9BNZ7NAeElz38ZsK
-  export OPENSEARCH_URL=https://localhost:9200
-  export OPENSEARCH_USER=admin
-  export OPENSEARCH_PASS=+niYPz4ZO9M.H21TqIukHLCK2IzHhBLI
-"""
 
 import os
 import csv
