@@ -193,6 +193,50 @@ def fetch_events(hours: int) -> list:
     return events
 
 
+# ---------------------------------------------------------------------------
+# IP reputation enrichment (reads the existing cache only, makes no API
+# calls itself). Cache is built/refreshed separately by enrich_ips.py.
+# Schema: ip, abuse_score, abuse_reports, country, isp,
+#         gn_classification, gn_name, ts
+# ---------------------------------------------------------------------------
+def load_enrichment(db_path: str, ips) -> dict:
+    """
+    Look up cached IP reputation for the given IPs. Missing DB or missing
+    rows are not fatal: the report renders with '-' for those fields.
+    Returns {ip: {abuse_score, country, gn_classification, gn_name}}.
+    """
+    import sqlite3
+    from pathlib import Path as _Path
+
+    out = {}
+    if not _Path(db_path).exists():
+        print(f"[WARN] enrichment cache not found: {db_path} "
+              f"(report will show '-' for reputation columns)", file=sys.stderr)
+        return out
+
+    try:
+        con = sqlite3.connect(db_path)
+        ip_list = list(set(ips))
+        if not ip_list:
+            return out
+        placeholders = ",".join("?" for _ in ip_list)
+        rows = con.execute(
+            f"SELECT ip, abuse_score, country, gn_classification, gn_name "
+            f"FROM ips WHERE ip IN ({placeholders})", ip_list).fetchall()
+        for ip, score, country, gn_class, gn_name in rows:
+            out[ip] = {
+                "abuse_score": score,
+                "country": country or "",
+                "gn_classification": gn_class or "unknown",
+                "gn_name": gn_name or "",
+            }
+        con.close()
+    except sqlite3.Error as exc:
+        print(f"[WARN] enrichment cache read failed: {exc} "
+              f"(report will show '-' for reputation columns)", file=sys.stderr)
+    return out
+
+
 
 # ===========================================================================
 # Below: protocol map, drill-down JS, classify_events, and build_html.
@@ -266,6 +310,9 @@ function renderDrill() {
       + '<td style="font-size:11px;color:#777;font-family:monospace">' + r.first + '</td>'
       + '<td style="font-size:11px;color:#777;font-family:monospace">' + r.last + '</td>'
       + '<td><span class="' + badge[r.risk] + '">' + r.risk + '</span></td>'
+      + '<td style="font-size:11px;color:#555;text-align:center">' + r.country + '</td>'
+      + '<td style="font-size:11px;font-weight:600;text-align:right">' + r.abuse + '</td>'
+      + '<td style="font-size:11px;color:#777">' + r.gn + '</td>'
       + '</tr>';
   }
   document.getElementById('drill-rows').innerHTML = out;
@@ -345,9 +392,10 @@ def classify_events(events: list[dict]) -> dict:
     }
 
 
-def build_html(data: dict, hours: int, log_path: str) -> str:
+def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -> str:
     now    = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=hours)
+    enrichment = enrichment or {}
 
     total       = data["total"]
     unique_ips  = data["unique_ips"]
@@ -383,12 +431,22 @@ def build_html(data: dict, hours: int, log_path: str) -> str:
         top_proto = data["ip_protocols"][ip].most_common(1)
         proto_str = PROTOCOL_MAP.get(top_proto[0][0], (top_proto[0][0].upper(), "", "#888"))[0] if top_proto else "?"
         flag = "🔴" if count >= 50 else ("🟡" if count >= 10 else "🟢")
+        rep = enrichment.get(ip, {})
+        abuse = rep.get("abuse_score")
+        abuse_str = f"{abuse}%" if abuse is not None else "-"
+        abuse_color = "#a32d2d" if (abuse or 0) >= 75 else ("#854f0b" if (abuse or 0) >= 25 else "#999")
+        country = rep.get("country") or "-"
+        gn = rep.get("gn_classification", "-")
+        gn_color = {"malicious": "#a32d2d", "benign": "#3b6d11"}.get(gn, "#999")
         ip_rows += f"""
         <tr>
           <td style="font-family:monospace;font-size:12px">{ip}</td>
           <td style="text-align:center;font-size:14px">{flag}</td>
           <td style="text-align:right;font-size:12px;font-weight:600">{count}</td>
           <td style="font-size:12px;color:#555">{proto_str}</td>
+          <td style="font-size:12px;color:#555;text-align:center">{country}</td>
+          <td style="font-size:12px;font-weight:600;text-align:right;color:{abuse_color}">{abuse_str}</td>
+          <td style="font-size:11px;color:{gn_color}">{gn}</td>
         </tr>"""
 
     # Hourly chart (last 24 buckets)
@@ -423,6 +481,7 @@ def build_html(data: dict, hours: int, log_path: str) -> str:
         first = data["ip_first_seen"].get(ip)
         last  = data["ip_last_seen"].get(ip)
         risk  = "high" if count >= 50 else ("med" if count >= 10 else "low")
+        rep = enrichment.get(ip, {})
         return {
             "ip":    ip,
             "hits":  count,
@@ -430,6 +489,9 @@ def build_html(data: dict, hours: int, log_path: str) -> str:
             "first": first.strftime("%m-%d %H:%M") if first else "",
             "last":  last.strftime("%m-%d %H:%M") if last else "",
             "risk":  risk,
+            "country": rep.get("country") or "-",
+            "abuse":   rep.get("abuse_score") if rep.get("abuse_score") is not None else "-",
+            "gn":      rep.get("gn_classification", "-"),
         }
 
     unique_records   = [_ip_record(ip, c) for ip, c in ip_counts.most_common()]
@@ -564,7 +626,7 @@ def build_html(data: dict, hours: int, log_path: str) -> str:
   <div class="card">
     <h2>Top attacker IPs</h2>
     <table>
-      <tr><th>IP</th><th>Risk</th><th>Hits</th><th>Protocol</th></tr>
+      <tr><th>IP</th><th>Risk</th><th>Hits</th><th>Protocol</th><th>Country</th><th>Abuse%</th><th>GreyNoise</th></tr>
       {ip_rows}
     </table>
     <div style="font-size:10px;color:#bbb;margin-top:8px">🔴 ≥50 hits &nbsp; 🟡 ≥10 hits &nbsp; 🟢 &lt;10 hits</div>
@@ -637,6 +699,9 @@ def build_html(data: dict, hours: int, log_path: str) -> str:
             <th>First seen (UTC)</th>
             <th>Last seen (UTC)</th>
             <th>Risk</th>
+            <th>Country</th>
+            <th>Abuse%</th>
+            <th>GreyNoise</th>
           </tr>
         </thead>
         <tbody id="drill-rows"></tbody>
@@ -686,6 +751,10 @@ def main():
                         help="Indexer base URL (default https://localhost:9200)")
     parser.add_argument("--index", default=INDEX_PATTERN,
                         help="Index pattern (default wazuh-alerts-*)")
+    parser.add_argument("--enrich-db", default="ip_cache.db",
+                        help="Path to the IP reputation cache built by "
+                             "enrich_ips.py (default ip_cache.db). Missing "
+                             "or stale entries render as '-', non-fatal.")
     args = parser.parse_args()
 
     INDEXER_URL   = args.url
@@ -702,8 +771,11 @@ def main():
     print(f"[*] Unique IPs:           {data['unique_ips']}")
     print(f"[*] High-frequency IPs:   {len(data['high_freq_ips'])}")
 
+    enrichment = load_enrichment(args.enrich_db, data["src_ip_counts"].keys())
+    print(f"[*] IPs with cached reputation: {len(enrichment)}/{data['unique_ips']}")
+
     source_label = f"Wazuh indexer ({INDEX_PATTERN})"
-    html = build_html(data, args.hours, source_label)
+    html = build_html(data, args.hours, source_label, enrichment)
 
     from pathlib import Path
     out_path = Path(args.out)
