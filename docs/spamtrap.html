@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>spamtrap // email threat intel</title>
+<meta name="description" content="A spamtrap catch-all domain feeding an email threat intel pipeline. Sender families, newly registered domains, and source IP reputation. All indicators defanged.">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0d1620;--bg-raised:#13202c;--line:#223344;--ink:#e7eef4;
+    --ink-dim:#93a7b8;--link:#46b6c4;--signal:#f5a623;--maxw:980px}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;line-height:1.55}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:24px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  a{color:var(--link);text-decoration:none}
+  a:hover{text-decoration:underline}
+  h1{font-size:1.6rem;margin:.2em 0} h2{font-size:1.1rem;margin-top:2em;
+    color:var(--signal)}
+  .dim{color:var(--ink-dim)}
+  .stats{display:flex;gap:16px;flex-wrap:wrap;margin:20px 0}
+  .stat{background:var(--bg-raised);border:1px solid var(--line);
+    border-radius:6px;padding:12px 18px;min-width:110px}
+  .stat b{display:block;font-size:1.5rem}
+  .tw{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:.85rem;
+    font-family:"IBM Plex Mono",monospace}
+  th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;
+    vertical-align:top}
+  th{background:var(--bg-raised);color:var(--ink-dim);font-weight:500}
+</style>
+</head>
+<body><div class="wrap">
+<p class="mono dim"><a href="index.html">&larr; honeylab</a></p>
+<h1>spamtrap // email threat intel</h1>
+<p class="dim">A catch-all spamtrap domain feeding an automated pipeline:
+SES inbound &rarr; parser &rarr; enrichment (RDAP domain age, disposable
+detection, AbuseIPDB) &rarr; sender-family clustering. All indicators on
+this page are defanged. Generated 2026-07-07T01:34:44Z.</p>
+<div class="stats">
+<div class="stat"><b>5</b>messages</div>
+<div class="stat"><b>5</b>last 7 days</div>
+<div class="stat"><b>2</b>campaigns</div>
+<div class="stat"><b>2</b>domains seen</div>
+<div class="stat"><b>5</b>source IPs</div>
+</div>
+<h2>campaigns (sender families)</h2>
+<div class="tw"><table><thead><tr><th>kind</th><th>family key</th><th>msgs</th><th>addrs</th><th>sample senders</th><th>last seen</th></tr></thead><tbody><tr><td>sender-stem</td><td>roberttim[@]scrapple[.]win</td><td>4</td><td>4</td><td>roberttim100[@]scrapple[.]win, robert[.]tim101[@]scrapple[.]win, roberttim102[@]scrapple[.]win, roberttim103+promo[@]scrapple[.]win</td><td>2026-07-07</td></tr><tr><td>display-name</td><td>robert tim</td><td>4</td><td>4</td><td>roberttim100[@]scrapple[.]win, robert[.]tim101[@]scrapple[.]win, roberttim102[@]scrapple[.]win, roberttim103+promo[@]scrapple[.]win</td><td>2026-07-07</td></tr></tbody></table></div>
+<h2>young sender domains (&le;90 days old)</h2>
+<div class="tw"><table><thead><tr><th>domain</th><th>registered</th><th>age (days)</th><th>disposable</th><th>msgs</th></tr></thead><tbody><tr><td>scrapple[.]win</td><td>2026-07-07</td><td>0</td><td>no</td><td>5</td></tr></tbody></table></div>
+<h2>source IP reputation</h2>
+<div class="tw"><table><thead><tr><th>ip</th><th>abuse score</th><th>reports</th><th>cc</th><th>isp</th><th>msgs</th></tr></thead><tbody><tr><td>54[.]240[.]8[.]59</td><td>13</td><td>3</td><td>US</td><td>Amazon Web Services, Inc.</td><td>1</td></tr><tr><td>54[.]240[.]8[.]221</td><td>8</td><td>3</td><td>US</td><td>Amazon Web Services, Inc.</td><td>1</td></tr><tr><td>54[.]240[.]8[.]38</td><td>7</td><td>2</td><td>US</td><td>Amazon Web Services, Inc.</td><td>1</td></tr><tr><td>54[.]240[.]8[.]195</td><td>0</td><td>2</td><td>US</td><td>Amazon Web Services, Inc.</td><td>1</td></tr><tr><td>54[.]240[.]8[.]70</td><td>0</td><td>1</td><td>US</td><td>Amazon Web Services, Inc.</td><td>1</td></tr></tbody></table></div>
+<h2>recent messages</h2>
+<div class="tw"><table><thead><tr><th>ingested (utc)</th><th>from</th><th>display name</th><th>subject</th><th>spf</th><th>dkim</th><th>dmarc</th><th>ses verdict</th></tr></thead><tbody><tr><td>2026-07-07T01:25</td><td>roberttim103+promo[@]scrapple[.]win</td><td>Robert Tim</td><td>Your account needs verification</td><td>pass</td><td>pass</td><td>none</td><td>PASS</td></tr><tr><td>2026-07-07T01:25</td><td>roberttim102[@]scrapple[.]win</td><td>Robert Tim</td><td>Your account needs verification</td><td>pass</td><td>pass</td><td>none</td><td>PASS</td></tr><tr><td>2026-07-07T01:25</td><td>robert[.]tim101[@]scrapple[.]win</td><td>Robert Tim</td><td>Your account needs verification</td><td>pass</td><td>pass</td><td>none</td><td>PASS</td></tr><tr><td>2026-07-07T01:05</td><td>roberttim100[@]scrapple[.]win</td><td>Robert Tim</td><td>parser live test</td><td>pass</td><td>pass</td><td>none</td><td>FAIL</td></tr><tr><td>2026-07-07T01:04</td><td>smoketest[@]scrapple[.]win</td><td></td><td>spamtrap smoke test</td><td>pass</td><td>pass</td><td>none</td><td>PASS</td></tr></tbody></table></div>
+<p class="dim mono" style="margin-top:2.5em">indicators defanged: [.] = dot,
+[@] = at, hxxp = http. pipeline is young; volume grows as trap addresses
+get seeded.</p>
+</div></body></html>
