@@ -1,0 +1,160 @@
+{
+ "type": "bundle",
+ "id": "bundle--4ae38afe-fd68-5c0a-95b3-baffd42abab1",
+ "objects": [
+  {
+   "type": "identity",
+   "spec_version": "2.1",
+   "id": "identity--56747896-a6c5-59df-943e-2c2d1ca04780",
+   "created": "2026-07-06T00:00:00Z",
+   "modified": "2026-07-06T00:00:00Z",
+   "name": "honeylab spamtrap",
+   "identity_class": "system",
+   "description": "Automated email spamtrap. IOCs from unsolicited mail to a seeded catch-all domain."
+  },
+  {
+   "type": "indicator",
+   "spec_version": "2.1",
+   "id": "indicator--d176b2ec-059c-5d01-aa92-a0d604ed692c",
+   "created_by_ref": "identity--56747896-a6c5-59df-943e-2c2d1ca04780",
+   "created": "2026-07-07T01:05:12Z",
+   "modified": "2026-07-07T01:25:52Z",
+   "name": "spamtrap campaign sender (roberttim@scrapple.win)",
+   "pattern": "[email-message:from_ref.value = 'roberttim100@scrapple.win']",
+   "pattern_type": "stix",
+   "valid_from": "2026-07-07T01:05:12Z",
+   "labels": [
+    "malicious-activity",
+    "phishing"
+   ]
+  },
+  {
+   "type": "indicator",
+   "spec_version": "2.1",
+   "id": "indicator--2650e298-3d3d-55fb-a25d-ffb83b95561a",
+   "created_by_ref": "identity--56747896-a6c5-59df-943e-2c2d1ca04780",
+   "created": "2026-07-07T01:05:12Z",
+   "modified": "2026-07-07T01:25:52Z",
+   "name": "spamtrap campaign sender (roberttim@scrapple.win)",
+   "pattern": "[email-message:from_ref.value = 'robert.tim101@scrapple.win']",
+   "pattern_type": "stix",
+   "valid_from": "2026-07-07T01:05:12Z",
+   "labels": [
+    "malicious-activity",
+    "phishing"
+   ]
+  },
+  {
+   "type": "indicator",
+   "spec_version": "2.1",
+   "id": "indicator--7d309472-6089-5dc1-9b92-37be0eb46bce",
+   "created_by_ref": "identity--56747896-a6c5-59df-943e-2c2d1ca04780",
+   "created": "2026-07-07T01:05:12Z",
+   "modified": "2026-07-07T01:25:52Z",
+   "name": "spamtrap campaign sender (roberttim@scrapple.win)",
+   "pattern": "[email-message:from_ref.value = 'roberttim102@scrapple.win']",
+   "pattern_type": "stix",
+   "valid_from": "2026-07-07T01:05:12Z",
+   "labels": [
+    "malicious-activity",
+    "phishing"
+   ]
+  },
+  {
+   "type": "indicator",
+   "spec_version": "2.1",
+   "id": "indicator--46941f2d-88e6-5834-be13-a9e8ff914afb",
+   "created_by_ref": "identity--56747896-a6c5-59df-943e-2c2d1ca04780",
+   "created": "2026-07-07T01:05:12Z",
+   "modified": "2026-07-07T01:25:52Z",
+   "name": "spamtrap campaign sender (roberttim@scrapple.win)",
+   "pattern": "[email-message:from_ref.value = 'roberttim103+promo@scrapple.win']",
+   "pattern_type": "stix",
+   "valid_from": "2026-07-07T01:05:12Z",
+   "labels": [
+    "malicious-activity",
+    "phishing"
+   ]
+  },
+  {
+   "type": "indicator",
+   "spec_version": "2.1",
+   "id": "indicator--d176b2ec-059c-5d01-aa92-a0d604ed692c",
+   "created_by_ref": "identity--56747896-a6c5-59df-943e-2c2d1ca04780",
+   "created": "2026-07-07T01:05:12Z",
+   "modified": "2026-07-07T01:25:52Z",
+   "name": "spamtrap campaign sender (robert tim)",
+   "pattern": "[email-message:from_ref.value = 'roberttim100@scrapple.win']",
+   "pattern_type": "stix",
+   "valid_from": "2026-07-07T01:05:12Z",
+   "labels": [
+    "malicious-activity",
+    "phishing"
+   ]
+  },
+  {
+   "type": "indicator",
+   "spec_version": "2.1",
+   "id": "indicator--2650e298-3d3d-55fb-a25d-ffb83b95561a",
+   "created_by_ref": "identity--56747896-a6c5-59df-943e-2c2d1ca04780",
+   "created": "2026-07-07T01:05:12Z",
+   "modified": "2026-07-07T01:25:52Z",
+   "name": "spamtrap campaign sender (robert tim)",
+   "pattern": "[email-message:from_ref.value = 'robert.tim101@scrapple.win']",
+   "pattern_type": "stix",
+   "valid_from": "2026-07-07T01:05:12Z",
+   "labels": [
+    "malicious-activity",
+    "phishing"
+   ]
+  },
+  {
+   "type": "indicator",
+   "spec_version": "2.1",
+   "id": "indicator--7d309472-6089-5dc1-9b92-37be0eb46bce",
+   "created_by_ref": "identity--56747896-a6c5-59df-943e-2c2d1ca04780",
+   "created": "2026-07-07T01:05:12Z",
+   "modified": "2026-07-07T01:25:52Z",
+   "name": "spamtrap campaign sender (robert tim)",
+   "pattern": "[email-message:from_ref.value = 'roberttim102@scrapple.win']",
+   "pattern_type": "stix",
+   "valid_from": "2026-07-07T01:05:12Z",
+   "labels": [
+    "malicious-activity",
+    "phishing"
+   ]
+  },
+  {
+   "type": "indicator",
+   "spec_version": "2.1",
+   "id": "indicator--46941f2d-88e6-5834-be13-a9e8ff914afb",
+   "created_by_ref": "identity--56747896-a6c5-59df-943e-2c2d1ca04780",
+   "created": "2026-07-07T01:05:12Z",
+   "modified": "2026-07-07T01:25:52Z",
+   "name": "spamtrap campaign sender (robert tim)",
+   "pattern": "[email-message:from_ref.value = 'roberttim103+promo@scrapple.win']",
+   "pattern_type": "stix",
+   "valid_from": "2026-07-07T01:05:12Z",
+   "labels": [
+    "malicious-activity",
+    "phishing"
+   ]
+  },
+  {
+   "type": "indicator",
+   "spec_version": "2.1",
+   "id": "indicator--3e39de9b-a723-5208-91fd-b92d0297835a",
+   "created_by_ref": "identity--56747896-a6c5-59df-943e-2c2d1ca04780",
+   "created": "2026-01-01T00:00:00Z",
+   "modified": "2026-01-01T00:00:00Z",
+   "name": "newly registered sender domain (0d old)",
+   "pattern": "[domain-name:value = 'scrapple.win']",
+   "pattern_type": "stix",
+   "valid_from": "2026-01-01T00:00:00Z",
+   "labels": [
+    "malicious-activity",
+    "anomalous-activity"
+   ]
+  }
+ ]
+}

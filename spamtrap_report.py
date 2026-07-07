@@ -8,14 +8,25 @@ changed. Runs from a systemd user timer on homebase.
 """
 import html
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
-PROFILE = "honeymike"
-BUCKET = "spamtrap-mail-REDACTED-ACCT"
-KEY = "exports/latest.json"
 REPO = Path(__file__).resolve().parent
+
+
+def _conf(key):
+    for line in (REPO / ".spamtrap.conf").read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and line.split("=", 1)[0] == key:
+            return line.split("=", 1)[1].strip()
+    return os.environ[key]
+
+
+PROFILE = _conf("PROFILE")
+BUCKET = _conf("BUCKET")
+KEY = "exports/latest.json"
 PAGE = REPO / "docs" / "spamtrap.html"
 
 
@@ -119,8 +130,9 @@ this page are defanged. Generated {esc(d["generated"])}.</p>
 <h2>recent messages</h2>
 {table(["ingested (utc)", "from", "display name", "subject", "spf", "dkim", "dmarc", "ses verdict"], recent_rows)}
 <p class="dim mono" style="margin-top:2.5em">indicators defanged: [.] = dot,
-[@] = at, hxxp = http. pipeline is young; volume grows as trap addresses
-get seeded.</p>
+[@] = at, hxxp = http. machine-readable feed (real IOCs, STIX 2.1):
+<a href="stix-bundle.json">stix-bundle.json</a>. pipeline is young; volume
+grows as trap addresses get seeded.</p>
 </div></body></html>
 """
 
