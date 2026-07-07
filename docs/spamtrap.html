@@ -39,22 +39,27 @@
 <p class="mono dim"><a href="index.html">&larr; honeylab</a></p>
 <h1>spamtrap // email threat intel</h1>
 <p class="dim">A catch-all spamtrap domain feeding an automated pipeline:
-SES inbound &rarr; parser &rarr; enrichment (RDAP domain age, disposable
-detection, AbuseIPDB) &rarr; sender-family clustering. All indicators on
-this page are defanged. Generated 2026-07-07T11:45:33Z.</p>
+SES inbound &rarr; parser &rarr; enrichment (local reputation feeds,
+RDAP domain age, Spamhaus DNSBL, ASN, AbuseIPDB, URLhaus) &rarr;
+sender-family clustering. All indicators on this page are defanged.
+Generated 2026-07-07T15:02:19Z.</p>
 <div class="stats">
 <div class="stat"><b>5</b>messages</div>
 <div class="stat"><b>5</b>last 7 days</div>
 <div class="stat"><b>2</b>campaigns</div>
 <div class="stat"><b>2</b>domains seen</div>
 <div class="stat"><b>5</b>source IPs</div>
+<div class="stat"><b>0</b>known-bad IPs</div>
+<div class="stat"><b>0</b>flagged URLs</div>
 </div>
 <h2>campaigns (sender families)</h2>
 <div class="tw"><table><thead><tr><th>kind</th><th>family key</th><th>msgs</th><th>addrs</th><th>sample senders</th><th>last seen</th></tr></thead><tbody><tr><td>sender-stem</td><td>roberttim[@]scrapple[.]win</td><td>4</td><td>4</td><td>roberttim100[@]scrapple[.]win, robert[.]tim101[@]scrapple[.]win, roberttim102[@]scrapple[.]win, roberttim103+promo[@]scrapple[.]win</td><td>2026-07-07</td></tr><tr><td>display-name</td><td>robert tim</td><td>4</td><td>4</td><td>roberttim100[@]scrapple[.]win, robert[.]tim101[@]scrapple[.]win, roberttim102[@]scrapple[.]win, roberttim103+promo[@]scrapple[.]win</td><td>2026-07-07</td></tr></tbody></table></div>
 <h2>young sender domains (&le;90 days old)</h2>
 <div class="tw"><table><thead><tr><th>domain</th><th>registered</th><th>age (days)</th><th>disposable</th><th>msgs</th></tr></thead><tbody><tr><td>scrapple[.]win</td><td>2026-07-07</td><td>0</td><td>no</td><td>5</td></tr></tbody></table></div>
 <h2>source IP reputation</h2>
-<div class="tw"><table><thead><tr><th>ip</th><th>abuse score</th><th>reports</th><th>cc</th><th>isp</th><th>msgs</th></tr></thead><tbody><tr><td>54[.]240[.]8[.]59</td><td>13</td><td>3</td><td>US</td><td>Amazon Web Services, Inc.</td><td>1</td></tr><tr><td>54[.]240[.]8[.]221</td><td>8</td><td>3</td><td>US</td><td>Amazon Web Services, Inc.</td><td>1</td></tr><tr><td>54[.]240[.]8[.]38</td><td>7</td><td>2</td><td>US</td><td>Amazon Web Services, Inc.</td><td>1</td></tr><tr><td>54[.]240[.]8[.]195</td><td>0</td><td>2</td><td>US</td><td>Amazon Web Services, Inc.</td><td>1</td></tr><tr><td>54[.]240[.]8[.]70</td><td>0</td><td>1</td><td>US</td><td>Amazon Web Services, Inc.</td><td>1</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>ip</th><th>known bad</th><th>abuse score</th><th>cc</th><th>asn / org</th><th>dnsbl</th><th>msgs</th></tr></thead><tbody><tr><td>54[.]240[.]8[.]59</td><td><span class="dim">-</span></td><td>13</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td>1</td></tr><tr><td>54[.]240[.]8[.]221</td><td><span class="dim">-</span></td><td>8</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td>1</td></tr><tr><td>54[.]240[.]8[.]38</td><td><span class="dim">-</span></td><td>7</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td>1</td></tr><tr><td>54[.]240[.]8[.]70</td><td><span class="dim">-</span></td><td>0</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td>1</td></tr><tr><td>54[.]240[.]8[.]195</td><td><span class="dim">-</span></td><td>0</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td>1</td></tr></tbody></table></div>
+<h2>flagged URLs (URLhaus)</h2>
+<p class="dim">nothing yet</p>
 <h2>recent messages</h2>
 <div class="tw"><table><thead><tr><th>ingested (utc)</th><th>from</th><th>display name</th><th>subject</th><th>spf</th><th>dkim</th><th>dmarc</th><th>ses verdict</th></tr></thead><tbody><tr><td>2026-07-07T01:25</td><td>roberttim103+promo[@]scrapple[.]win</td><td>Robert Tim</td><td>Your account needs verification</td><td>pass</td><td>pass</td><td>none</td><td>PASS</td></tr><tr><td>2026-07-07T01:25</td><td>roberttim102[@]scrapple[.]win</td><td>Robert Tim</td><td>Your account needs verification</td><td>pass</td><td>pass</td><td>none</td><td>PASS</td></tr><tr><td>2026-07-07T01:25</td><td>robert[.]tim101[@]scrapple[.]win</td><td>Robert Tim</td><td>Your account needs verification</td><td>pass</td><td>pass</td><td>none</td><td>PASS</td></tr><tr><td>2026-07-07T01:05</td><td>roberttim100[@]scrapple[.]win</td><td>Robert Tim</td><td>parser live test</td><td>pass</td><td>pass</td><td>none</td><td>FAIL</td></tr><tr><td>2026-07-07T01:04</td><td>smoketest[@]scrapple[.]win</td><td></td><td>spamtrap smoke test</td><td>pass</td><td>pass</td><td>none</td><td>PASS</td></tr></tbody></table></div>
 <p class="dim mono" style="margin-top:2.5em">indicators defanged: [.] = dot,
