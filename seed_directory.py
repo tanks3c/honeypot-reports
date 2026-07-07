@@ -91,6 +91,10 @@ def main():
   .alt{{color:var(--dim)}}
   .void{{position:absolute;left:-9999px;top:auto;height:1px;overflow:hidden}}
   footer{{color:var(--dim);font-size:.8rem;margin-top:2.5em}}
+  @media (max-width: 640px) {{
+    .wrap {{ padding: 14px; }}
+    table {{ display: block; overflow-x: auto; }}
+  }}
 </style>
 </head>
 <body><div class="wrap">

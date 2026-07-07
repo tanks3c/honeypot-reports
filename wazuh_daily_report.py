@@ -569,6 +569,13 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
   .drill-body {{ overflow-y:auto; padding:8px 20px 12px; }}
   .drill-table thead th {{ position:sticky; top:0; background:#13202c; z-index:1; }}
   .drill-empty {{ padding:24px 20px; text-align:center; color:#5e7385; font-size:13px; }}
+  @media (max-width: 640px) {{
+    body {{ padding: 1rem; }}
+    .grid4 {{ grid-template-columns: 1fr 1fr; }}
+    .grid2 {{ grid-template-columns: 1fr; }}
+    table {{ display: block; overflow-x: auto; white-space: nowrap; }}
+    .drill-modal {{ max-width: 94vw; }}
+  }}
 </style>
 </head>
 <body>
