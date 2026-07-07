@@ -245,12 +245,12 @@ def load_enrichment(db_path: str, ips) -> dict:
 
 # Map Dionaea protocol strings to human-readable labels and MITRE techniques
 PROTOCOL_MAP = {
-    "smbd":    ("SMB",    "T1210", "#A32D2D"),
-    "mysqld":  ("MySQL",  "T1190", "#3B6D11"),
-    "httpd":   ("HTTP",   "T1190", "#185FA5"),
-    "ftpd":    ("FTP",    "T1190", "#854F0B"),
-    "mssqld":  ("MSSQL",  "T1190", "#533489"),
-    "sipd":    ("SIP",    "T1190", "#5F5E5A"),
+    "smbd":    ("SMB",    "T1210", "#E5484D"),
+    "mysqld":  ("MySQL",  "T1190", "#7DD3C0"),
+    "httpd":   ("HTTP",   "T1190", "#46B6C4"),
+    "ftpd":    ("FTP",    "T1190", "#F5A623"),
+    "mssqld":  ("MSSQL",  "T1190", "#A78BFA"),
+    "sipd":    ("SIP",    "T1190", "#93A7B8"),
 }
 
 # Ports mapped to expected protocol (for sanity-check)
@@ -306,13 +306,13 @@ function renderDrill() {
     out += '<tr>'
       + '<td style="font-family:monospace;font-size:12px">' + r.ip + '</td>'
       + '<td style="text-align:right;font-weight:600;font-size:12px">' + r.hits + '</td>'
-      + '<td style="font-size:12px;color:#555">' + r.proto + '</td>'
-      + '<td style="font-size:11px;color:#777;font-family:monospace">' + r.first + '</td>'
-      + '<td style="font-size:11px;color:#777;font-family:monospace">' + r.last + '</td>'
+      + '<td style="font-size:12px;color:#93a7b8">' + r.proto + '</td>'
+      + '<td style="font-size:11px;color:#93a7b8;font-family:monospace">' + r.first + '</td>'
+      + '<td style="font-size:11px;color:#93a7b8;font-family:monospace">' + r.last + '</td>'
       + '<td><span class="' + badge[r.risk] + '">' + r.risk + '</span></td>'
-      + '<td style="font-size:11px;color:#555;text-align:center">' + r.country + '</td>'
+      + '<td style="font-size:11px;color:#93a7b8;text-align:center">' + r.country + '</td>'
       + '<td style="font-size:11px;font-weight:600;text-align:right">' + r.abuse + '</td>'
-      + '<td style="font-size:11px;color:#777">' + r.gn + '</td>'
+      + '<td style="font-size:11px;color:#93a7b8">' + r.gn + '</td>'
       + '</tr>';
   }
   document.getElementById('drill-rows').innerHTML = out;
@@ -411,40 +411,40 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
     max_proto_count = max(proto_counts.values(), default=1)
     proto_rows = ""
     for proto, count in proto_counts.most_common(8):
-        label, mitre, color = PROTOCOL_MAP.get(proto, (proto.upper(), "T1190", "#888"))
+        label, mitre, color = PROTOCOL_MAP.get(proto, (proto.upper(), "T1190", "#93A7B8"))
         pct = round(count / max_proto_count * 100)
         proto_rows += f"""
         <tr>
-          <td style="width:70px;font-size:12px;color:#666">{label}</td>
+          <td style="width:70px;font-size:12px;color:#93a7b8">{label}</td>
           <td style="padding:4px 8px">
-            <div style="background:#eee;border-radius:3px;height:10px;overflow:hidden">
+            <div style="background:#223344;border-radius:3px;height:10px;overflow:hidden">
               <div style="background:{color};width:{pct}%;height:100%;border-radius:3px"></div>
             </div>
           </td>
           <td style="width:40px;font-size:12px;text-align:right">{count}</td>
-          <td style="width:70px;font-size:11px;color:#999;padding-left:8px">{mitre}</td>
+          <td style="width:70px;font-size:11px;color:#5e7385;padding-left:8px">{mitre}</td>
         </tr>"""
 
     # Top IP table rows
     ip_rows = ""
     for ip, count in top_ips:
         top_proto = data["ip_protocols"][ip].most_common(1)
-        proto_str = PROTOCOL_MAP.get(top_proto[0][0], (top_proto[0][0].upper(), "", "#888"))[0] if top_proto else "?"
+        proto_str = PROTOCOL_MAP.get(top_proto[0][0], (top_proto[0][0].upper(), "", "#93A7B8"))[0] if top_proto else "?"
         flag = "🔴" if count >= 50 else ("🟡" if count >= 10 else "🟢")
         rep = enrichment.get(ip, {})
         abuse = rep.get("abuse_score")
         abuse_str = f"{abuse}%" if abuse is not None else "-"
-        abuse_color = "#a32d2d" if (abuse or 0) >= 75 else ("#854f0b" if (abuse or 0) >= 25 else "#999")
+        abuse_color = "#e5484d" if (abuse or 0) >= 75 else ("#f5a623" if (abuse or 0) >= 25 else "#93a7b8")
         country = rep.get("country") or "-"
         gn = rep.get("gn_classification", "-")
-        gn_color = {"malicious": "#a32d2d", "benign": "#3b6d11"}.get(gn, "#999")
+        gn_color = {"malicious": "#e5484d", "benign": "#7dd3c0"}.get(gn, "#93a7b8")
         ip_rows += f"""
         <tr>
           <td style="font-family:monospace;font-size:12px">{ip}</td>
           <td style="text-align:center;font-size:14px">{flag}</td>
           <td style="text-align:right;font-size:12px;font-weight:600">{count}</td>
-          <td style="font-size:12px;color:#555">{proto_str}</td>
-          <td style="font-size:12px;color:#555;text-align:center">{country}</td>
+          <td style="font-size:12px;color:#93a7b8">{proto_str}</td>
+          <td style="font-size:12px;color:#93a7b8;text-align:center">{country}</td>
           <td style="font-size:12px;font-weight:600;text-align:right;color:{abuse_color}">{abuse_str}</td>
           <td style="font-size:11px;color:{gn_color}">{gn}</td>
         </tr>"""
@@ -460,16 +460,16 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
     for e in recent:
         ts_str = e["_ts"].strftime("%H:%M:%S")
         proto  = e.get("connection", {}).get("protocol", "?")
-        label  = PROTOCOL_MAP.get(proto, (proto.upper(), "", "#888"))[0]
-        color  = PROTOCOL_MAP.get(proto, ("", "", "#888"))[2]
+        label  = PROTOCOL_MAP.get(proto, (proto.upper(), "", "#93A7B8"))[0]
+        color  = PROTOCOL_MAP.get(proto, ("", "", "#93A7B8"))[2]
         src    = e.get("src_ip", "?")
         port   = e.get("dst_port", "?")
         event_rows += f"""
         <tr>
-          <td style="font-size:11px;color:#777;font-family:monospace">{ts_str}</td>
+          <td style="font-size:11px;color:#93a7b8;font-family:monospace">{ts_str}</td>
           <td style="font-size:11px;font-family:monospace">{src}</td>
           <td><span style="background:{color}22;color:{color};padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">{label}</span></td>
-          <td style="font-size:11px;color:#777">{port}</td>
+          <td style="font-size:11px;color:#93a7b8">{port}</td>
         </tr>"""
 
     # ---- Drill-down datasets (power the clickable metric cards) ----
@@ -477,7 +477,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
 
     def _ip_record(ip, count):
         tp = data["ip_protocols"][ip].most_common(1)
-        proto_str = (PROTOCOL_MAP.get(tp[0][0], (tp[0][0].upper(), "", "#888"))[0]) if tp else "?"
+        proto_str = (PROTOCOL_MAP.get(tp[0][0], (tp[0][0].upper(), "", "#93A7B8"))[0]) if tp else "?"
         first = data["ip_first_seen"].get(ip)
         last  = data["ip_last_seen"].get(ip)
         risk  = "high" if count >= 50 else ("med" if count >= 10 else "low")
@@ -511,60 +511,64 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dionaea Daily Report - {now.strftime('%Y-%m-%d')}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          background: #f5f5f0; color: #1a1a1a; padding: 2rem; }}
+  body {{ font-family: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          background: #0d1620; color: #e7eef4; padding: 2rem; }}
   h1   {{ font-size: 20px; font-weight: 600; margin-bottom: 4px; }}
-  h2   {{ font-size: 13px; font-weight: 500; color: #666; margin: 1.5rem 0 .75rem; text-transform: uppercase; letter-spacing: .05em; }}
-  .meta  {{ font-size: 12px; color: #999; margin-bottom: 1.5rem; }}
+  h2   {{ font-size: 13px; font-weight: 500; color: #93a7b8; margin: 1.5rem 0 .75rem; text-transform: uppercase; letter-spacing: .05em; }}
+  .meta  {{ font-size: 12px; color: #5e7385; margin-bottom: 1.5rem; }}
   .grid4 {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.5rem; }}
   .grid2 {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }}
-  .card  {{ background: #fff; border-radius: 10px; padding: 1rem 1.25rem; border: 1px solid #e8e8e0; }}
-  .metric-label {{ font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }}
-  .metric-value {{ font-size: 28px; font-weight: 600; }}
-  .danger {{ color: #a32d2d; }}
-  .warn   {{ color: #854f0b; }}
-  .info   {{ color: #185fa5; }}
+  .card  {{ background: #13202c; border-radius: 10px; padding: 1rem 1.25rem; border: 1px solid #223344; }}
+  .metric-label {{ font-size: 11px; color: #93a7b8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }}
+  .metric-value {{ font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 28px; font-weight: 600; }}
+  .danger {{ color: #e5484d; }}
+  .warn   {{ color: #f5a623; }}
+  .info   {{ color: #46b6c4; }}
   table   {{ width: 100%; border-collapse: collapse; }}
-  th      {{ font-size: 11px; color: #999; font-weight: 500; padding: 4px 6px; text-align: left; border-bottom: 1px solid #eee; }}
-  td      {{ padding: 5px 6px; border-bottom: 1px solid #f5f5f0; vertical-align: middle; }}
+  th      {{ font-size: 11px; color: #93a7b8; font-weight: 500; padding: 4px 6px; text-align: left; border-bottom: 1px solid #223344; }}
+  td      {{ font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12.5px; padding: 5px 6px; border-bottom: 1px solid #1a2937; vertical-align: middle; }}
   tr:last-child td {{ border-bottom: none; }}
   .timeline {{ position: relative; height: 80px; display: flex; align-items: flex-end; gap: 2px; }}
-  .tl-bar  {{ flex: 1; background: #185fa5; border-radius: 2px 2px 0 0; opacity: .6;
+  .tl-bar  {{ flex: 1; background: #46b6c4; border-radius: 2px 2px 0 0; opacity: .6;
                min-height: 2px; transition: opacity .15s; }}
   .tl-bar:hover {{ opacity: 1; }}
-  footer   {{ font-size: 11px; color: #bbb; margin-top: 2rem; text-align: center; }}
-  .badge-high {{ background:#fdecea;color:#a32d2d;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600 }}
-  .badge-med  {{ background:#fff3e0;color:#854f0b;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600 }}
-  .badge-low  {{ background:#e8f5e9;color:#3b6d11;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600 }}
+  footer   {{ font-size: 11px; color: #5e7385; margin-top: 2rem; text-align: center; }}
+  .badge-high {{ background:rgba(229,72,77,.15);color:#ff6b6b;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600 }}
+  .badge-med  {{ background:rgba(245,166,35,.15);color:#f5a623;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600 }}
+  .badge-low  {{ background:rgba(70,182,196,.15);color:#7dd3c0;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600 }}
 
   /* Clickable metric cards */
   .card-click {{ cursor:pointer; position:relative; transition: border-color .12s, box-shadow .12s, transform .12s; }}
-  .card-click:hover {{ border-color:#d4d4c8; box-shadow:0 4px 14px rgba(0,0,0,.06); transform:translateY(-1px); }}
-  .card-click:focus-visible {{ outline:2px solid #185fa5; outline-offset:2px; }}
-  .drill-hint {{ font-size:10px; color:#bbb; margin-top:8px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }}
-  .card-click:hover .drill-hint {{ color:#185fa5; }}
+  .card-click:hover {{ border-color:#46b6c4; box-shadow:0 4px 14px rgba(0,0,0,.35); transform:translateY(-1px); }}
+  .card-click:focus-visible {{ outline:2px solid #46b6c4; outline-offset:2px; }}
+  .drill-hint {{ font-size:10px; color:#5e7385; margin-top:8px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }}
+  .card-click:hover .drill-hint {{ color:#46b6c4; }}
 
   /* Drill-down modal */
-  .drill-overlay {{ display:none; position:fixed; inset:0; background:rgba(20,20,16,.55);
+  .drill-overlay {{ display:none; position:fixed; inset:0; background:rgba(5,10,15,.7);
                     z-index:50; align-items:flex-start; justify-content:center; padding:6vh 16px; }}
-  .drill-modal {{ background:#fff; border-radius:12px; width:100%; max-width:680px; max-height:84vh;
-                  display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.3);
-                  border:1px solid #e8e8e0; overflow:hidden; }}
+  .drill-modal {{ background:#13202c; border-radius:12px; width:100%; max-width:680px; max-height:84vh;
+                  display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.5);
+                  border:1px solid #223344; overflow:hidden; }}
   .drill-head {{ display:flex; align-items:flex-start; justify-content:space-between;
-                 padding:18px 20px 14px; border-bottom:1px solid #eee; }}
-  .drill-title {{ font-size:15px; font-weight:600; color:#1a1a1a; }}
-  .drill-sub {{ font-size:11px; color:#999; margin-top:3px; }}
-  .drill-x {{ background:none; border:none; font-size:24px; line-height:1; color:#bbb;
+                 padding:18px 20px 14px; border-bottom:1px solid #223344; }}
+  .drill-title {{ font-size:15px; font-weight:600; color:#e7eef4; }}
+  .drill-sub {{ font-size:11px; color:#93a7b8; margin-top:3px; }}
+  .drill-x {{ background:none; border:none; font-size:24px; line-height:1; color:#93a7b8;
               cursor:pointer; padding:0 4px; }}
-  .drill-x:hover {{ color:#a32d2d; }}
-  .drill-filter {{ margin:14px 20px 0; padding:9px 12px; border:1px solid #e0e0d8; border-radius:7px;
-                   font-size:13px; font-family:monospace; outline:none; }}
-  .drill-filter:focus {{ border-color:#185fa5; }}
+  .drill-x:hover {{ color:#e5484d; }}
+  .drill-filter {{ margin:14px 20px 0; padding:9px 12px; border:1px solid #223344; border-radius:7px;
+                   background:#0d1620; color:#e7eef4;
+                   font-size:13px; font-family:"IBM Plex Mono", ui-monospace, monospace; outline:none; }}
+  .drill-filter:focus {{ border-color:#46b6c4; }}
   .drill-body {{ overflow-y:auto; padding:8px 20px 12px; }}
-  .drill-table thead th {{ position:sticky; top:0; background:#fff; z-index:1; }}
-  .drill-empty {{ padding:24px 20px; text-align:center; color:#aaa; font-size:13px; }}
+  .drill-table thead th {{ position:sticky; top:0; background:#13202c; z-index:1; }}
+  .drill-empty {{ padding:24px 20px; text-align:center; color:#5e7385; font-size:13px; }}
 </style>
 </head>
 <body>
@@ -614,7 +618,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
   <div class="card">
     <h2>Hourly volume (last {min(len(sorted_hours), 24)}h)</h2>
     <div class="timeline" id="tl"></div>
-    <div style="display:flex;justify-content:space-between;font-size:10px;color:#bbb;margin-top:4px">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#5e7385;margin-top:4px">
       <span>{sorted_hours[0][0].split(' ')[1] if sorted_hours else ''}</span>
       <span>{sorted_hours[-1][0].split(' ')[1] if sorted_hours else ''}</span>
     </div>
@@ -629,7 +633,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
       <tr><th>IP</th><th>Risk</th><th>Hits</th><th>Protocol</th><th>Country</th><th>Abuse%</th><th>GreyNoise</th></tr>
       {ip_rows}
     </table>
-    <div style="font-size:10px;color:#bbb;margin-top:8px">🔴 ≥50 hits &nbsp; 🟡 ≥10 hits &nbsp; 🟢 &lt;10 hits</div>
+    <div style="font-size:10px;color:#5e7385;margin-top:8px">🔴 ≥50 hits &nbsp; 🟡 ≥10 hits &nbsp; 🟢 &lt;10 hits</div>
   </div>
   <div class="card">
     <h2>Recent events (last 20)</h2>
@@ -723,7 +727,7 @@ bars.forEach(b => {{
   const d  = document.createElement('div');
   d.className = 'tl-bar';
   d.style.height = Math.max(4, Math.round(b.c / max * 76)) + 'px';
-  if (b.c === max) d.style.background = '#a32d2d';
+  if (b.c === max) d.style.background = '#e5484d';
   d.title = b.h + ' - ' + b.c + ' connections';
   tl.appendChild(d);
 }});
