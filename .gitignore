@@ -1,2 +1,6 @@
+*.crt
 .env
+*.key
+*.pyc
+__pycache__/
 .spamtrap.conf
