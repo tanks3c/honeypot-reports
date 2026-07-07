@@ -65,9 +65,18 @@ def render(d):
                    esc(x["age_days"]),
                    "yes" if x["disposable"] else "no", esc(x["msg_count"])]
                   for x in d["young_domains"]]
-    ip_rows = [[dz(x["ip"]), esc(x["abuse_score"]), esc(x["total_reports"]),
-                esc(x["country"]), esc(x["isp"]), esc(x["msg_count"])]
+    def badflag(x):
+        if x["known_bad"]:
+            return ('<b style="color:#ff6b6b">BAD</b> '
+                    f'<span class="dim">{esc(x["bad_sources"] or "")}</span>')
+        return '<span class="dim">-</span>'
+    ip_rows = [[dz(x["ip"]), badflag(x), esc(x["abuse_score"]),
+                esc(x["country"]),
+                esc(f'AS{x["asn"]} {x["org"]}') if x.get("asn") else "",
+                esc(x["dnsbl"] or ""), esc(x["msg_count"])]
                for x in d["top_ips"]]
+    url_rows = [[dz(u["url"]), esc(u["threat"]), esc(u["tags"] or "")]
+                for u in d.get("flagged_urls", [])]
     recent_rows = [[esc((m["ingested_at"] or "")[:16]), dz(m["from_addr"]),
                     esc(m["from_display"]), esc((m["subject"] or "")[:70]),
                     esc(m["spf"]), esc(m["dkim"]), esc(m["dmarc"]),
@@ -115,22 +124,27 @@ def render(d):
 <p class="mono dim"><a href="index.html">&larr; honeylab</a></p>
 <h1>spamtrap // email threat intel</h1>
 <p class="dim">A catch-all spamtrap domain feeding an automated pipeline:
-SES inbound &rarr; parser &rarr; enrichment (RDAP domain age, disposable
-detection, AbuseIPDB) &rarr; sender-family clustering. All indicators on
-this page are defanged. Generated {esc(d["generated"])}.</p>
+SES inbound &rarr; parser &rarr; enrichment (local reputation feeds,
+RDAP domain age, Spamhaus DNSBL, ASN, AbuseIPDB, URLhaus) &rarr;
+sender-family clustering. All indicators on this page are defanged.
+Generated {esc(d["generated"])}.</p>
 <div class="stats">
 <div class="stat"><b>{esc(t["messages"])}</b>messages</div>
 <div class="stat"><b>{esc(t["last7d"])}</b>last 7 days</div>
 <div class="stat"><b>{esc(t["campaigns"])}</b>campaigns</div>
 <div class="stat"><b>{esc(t["domains"])}</b>domains seen</div>
 <div class="stat"><b>{esc(t["ips"])}</b>source IPs</div>
+<div class="stat"><b>{esc(t.get("known_bad_ips", 0))}</b>known-bad IPs</div>
+<div class="stat"><b>{esc(t.get("flagged_urls", 0))}</b>flagged URLs</div>
 </div>
 <h2>campaigns (sender families)</h2>
 {table(["kind", "family key", "msgs", "addrs", "sample senders", "last seen"], camp_rows)}
 <h2>young sender domains (&le;90 days old)</h2>
 {table(["domain", "registered", "age (days)", "disposable", "msgs"], young_rows)}
 <h2>source IP reputation</h2>
-{table(["ip", "abuse score", "reports", "cc", "isp", "msgs"], ip_rows)}
+{table(["ip", "known bad", "abuse score", "cc", "asn / org", "dnsbl", "msgs"], ip_rows)}
+<h2>flagged URLs (URLhaus)</h2>
+{table(["url", "threat", "tags"], url_rows)}
 <h2>recent messages</h2>
 {table(["ingested (utc)", "from", "display name", "subject", "spf", "dkim", "dmarc", "ses verdict"], recent_rows)}
 <p class="dim mono" style="margin-top:2.5em">indicators defanged: [.] = dot,
