@@ -2,8 +2,10 @@
 
 import os
 import csv
+import gzip
 import json
 import time
+import ipaddress
 import sqlite3
 import requests
 
@@ -122,6 +124,131 @@ def cache_put_gn(con, ip, fields):
     con.commit()
 
 
+# --- Local bulk-feed layer (shared design with the spamtrap pipeline) ---
+# Downloads free/already-keyed reputation feeds into the local cache DB so
+# most IPs are resolved locally (known-bad + ASN/country) with no per-IP API
+# call. Refreshed roughly daily.
+FEED_TTL = 20 * 3600
+
+
+def _ensure_feed_schema(con):
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS feed_bad_ips (ip TEXT, source TEXT,
+        PRIMARY KEY(ip, source));
+    CREATE INDEX IF NOT EXISTS idx_fbi ON feed_bad_ips(ip);
+    CREATE TABLE IF NOT EXISTS feed_netblocks (start_int INTEGER,
+        end_int INTEGER, source TEXT);
+    CREATE INDEX IF NOT EXISTS idx_fnb ON feed_netblocks(start_int);
+    CREATE TABLE IF NOT EXISTS asn_ranges (start_int INTEGER, end_int INTEGER,
+        asn INTEGER, country TEXT, org TEXT);
+    CREATE INDEX IF NOT EXISTS idx_asr ON asn_ranges(start_int);
+    CREATE TABLE IF NOT EXISTS feed_meta (source TEXT PRIMARY KEY,
+        updated REAL, count INTEGER);
+    """)
+
+
+def _mark(con, source, count):
+    con.execute("INSERT INTO feed_meta VALUES (?,?,?) ON CONFLICT(source) DO "
+                "UPDATE SET updated=excluded.updated, count=excluded.count",
+                (source, time.time(), count))
+    print(f"[+] feed {source}: {count}")
+
+
+def _load_bad(con, source, ips):
+    con.execute("DELETE FROM feed_bad_ips WHERE source=?", (source,))
+    con.executemany("INSERT OR IGNORE INTO feed_bad_ips VALUES (?,?)",
+                    [(ip, source) for ip in ips])
+    _mark(con, source, len(ips))
+
+
+def sync_feeds(con):
+    _ensure_feed_schema(con)
+    row = con.execute("SELECT MIN(updated) FROM feed_meta").fetchone()
+    if row and row[0] and time.time() - row[0] < FEED_TTL:
+        print("[*] feeds fresh, skipping download")
+        return
+    try:
+        r = requests.get("https://api.abuseipdb.com/api/v2/blacklist",
+                         headers={"Key": ABUSE_KEY, "Accept": "application/json"},
+                         params={"confidenceMinimum": 75, "limit": 10000},
+                         timeout=60)
+        r.raise_for_status()
+        _load_bad(con, "abuseipdb",
+                  [x["ipAddress"] for x in r.json().get("data", []) if x.get("ipAddress")])
+    except Exception as e:
+        print("[warn] abuseipdb blacklist:", e)
+    try:
+        r = requests.get("https://feodotracker.abuse.ch/downloads/ipblocklist.json",
+                         timeout=60)
+        r.raise_for_status()
+        _load_bad(con, "feodo",
+                  [x["ip_address"] for x in r.json() if x.get("ip_address")])
+    except Exception as e:
+        print("[warn] feodo:", e)
+    try:
+        r = requests.get("https://www.spamhaus.org/drop/drop.txt", timeout=60)
+        r.raise_for_status()
+        rows = []
+        for line in r.text.splitlines():
+            line = line.strip()
+            if not line or line.startswith(";"):
+                continue
+            try:
+                net = ipaddress.ip_network(line.split(";")[0].strip(), strict=False)
+            except ValueError:
+                continue
+            rows.append((int(net.network_address), int(net.broadcast_address),
+                         "spamhaus-drop"))
+        con.execute("DELETE FROM feed_netblocks WHERE source='spamhaus-drop'")
+        con.executemany("INSERT INTO feed_netblocks VALUES (?,?,?)", rows)
+        _mark(con, "spamhaus-drop", len(rows))
+    except Exception as e:
+        print("[warn] drop:", e)
+    try:
+        r = requests.get("https://iptoasn.com/data/ip2asn-v4.tsv.gz", timeout=120)
+        r.raise_for_status()
+        rows = []
+        for line in gzip.decompress(r.content).decode("utf-8", "replace").splitlines():
+            p = line.split("\t")
+            if len(p) < 5 or p[2] == "0":
+                continue
+            try:
+                rows.append((int(ipaddress.ip_address(p[0])),
+                             int(ipaddress.ip_address(p[1])), int(p[2]), p[3], p[4]))
+            except ValueError:
+                continue
+        con.execute("DELETE FROM asn_ranges")
+        con.executemany("INSERT INTO asn_ranges VALUES (?,?,?,?,?)", rows)
+        _mark(con, "iptoasn", len(rows))
+    except Exception as e:
+        print("[warn] iptoasn:", e)
+    con.commit()
+
+
+def local_ip(con, ip):
+    out = {"known_bad": 0, "bad_sources": None, "asn": None,
+           "country": None, "org": None}
+    srcs = [r[0] for r in con.execute(
+        "SELECT source FROM feed_bad_ips WHERE ip=?", (ip,)).fetchall()]
+    try:
+        n = int(ipaddress.ip_address(ip))
+    except ValueError:
+        return out
+    nb = con.execute("SELECT source FROM feed_netblocks WHERE start_int<=? "
+                     "AND end_int>=? LIMIT 1", (n, n)).fetchone()
+    if nb:
+        srcs.append(nb[0])
+    if srcs:
+        out["known_bad"] = 1
+        out["bad_sources"] = ",".join(sorted(set(srcs)))
+    a = con.execute("SELECT asn, country, org FROM asn_ranges WHERE start_int<=? "
+                    "AND end_int>=? ORDER BY start_int DESC LIMIT 1",
+                    (n, n)).fetchone()
+    if a:
+        out["asn"], out["country"], out["org"] = a
+    return out
+
+
 # --- Pull IPs from OpenSearch ---
 def get_unique_ips():
     client = OpenSearch(
@@ -183,9 +310,17 @@ def enrich(con, ip):
     abuse_limited_now = False
     gn_limited_now = False
 
+    lo = local_ip(con, ip)
+    rec.update({"known_bad": lo["known_bad"], "bad_sources": lo["bad_sources"],
+                "asn": lo["asn"], "org": lo["org"]})
+
     cached_abuse = cache_get_abuse(con, ip)
     if cached_abuse:
         rec.update(cached_abuse)
+    elif lo["known_bad"]:
+        # a local feed already flagged this IP; skip AbuseIPDB, use local geo
+        rec.update({"abuse_score": None, "abuse_reports": None,
+                    "country": lo["country"], "isp": None})
     elif _LIMITED["abuse"]:
         rec.update({"abuse_score": None, "abuse_reports": None,
                     "country": None, "isp": None})
@@ -224,6 +359,9 @@ def enrich(con, ip):
 
     # Rate-limit path only: rest here since success paths already slept
     # is unnecessary; keep a light pace on the happy path only.
+    if not rec.get("country"):
+        rec["country"] = lo["country"]
+
     if not (abuse_limited_now or gn_limited_now):
         time.sleep(0.3)
 
@@ -233,10 +371,12 @@ def enrich(con, ip):
 # --- Main ---
 def main():
     con = init_cache()
+    sync_feeds(con)
     ips = get_unique_ips()
     print(f"[*] {len(ips)} unique IPs pulled")
 
-    fields = ["ip", "abuse_score", "abuse_reports", "country",
+    fields = ["ip", "known_bad", "bad_sources", "asn", "org",
+              "abuse_score", "abuse_reports", "country",
               "isp", "gn_classification", "gn_name"]
 
     abuse_fresh = abuse_cached = abuse_skipped = 0
