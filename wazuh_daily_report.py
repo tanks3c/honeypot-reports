@@ -230,6 +230,39 @@ def load_enrichment(db_path: str, ips) -> dict:
                 "gn_classification": gn_class or "unknown",
                 "gn_name": gn_name or "",
             }
+        # feed-layer fields (known-bad + ASN) from the same cache DB, written by
+        # enrich_ips.py's local bulk-feed layer. Absent tables are non-fatal.
+        import ipaddress as _ipa
+        for ip in ip_list:
+            try:
+                srcs = [r[0] for r in con.execute(
+                    "SELECT source FROM feed_bad_ips WHERE ip=?", (ip,)).fetchall()]
+                asn = org = None
+                try:
+                    n = int(_ipa.ip_address(ip))
+                    nb = con.execute("SELECT source FROM feed_netblocks WHERE "
+                                     "start_int<=? AND end_int>=? LIMIT 1",
+                                     (n, n)).fetchone()
+                    if nb:
+                        srcs.append(nb[0])
+                    a = con.execute("SELECT asn, org FROM asn_ranges WHERE "
+                                    "start_int<=? AND end_int>=? ORDER BY "
+                                    "start_int DESC LIMIT 1", (n, n)).fetchone()
+                    if a:
+                        asn, org = a
+                except ValueError:
+                    pass
+                if not (srcs or asn):
+                    continue
+                entry = out.setdefault(ip, {"abuse_score": None, "country": "",
+                                            "gn_classification": "unknown",
+                                            "gn_name": ""})
+                entry["asn"], entry["org"] = asn, org
+                if srcs:
+                    entry["known_bad"] = 1
+                    entry["bad_sources"] = ",".join(sorted(set(srcs)))
+            except sqlite3.Error:
+                break  # feed tables not present yet; skip feed enrichment
         con.close()
     except sqlite3.Error as exc:
         print(f"[WARN] enrichment cache read failed: {exc} "
@@ -438,13 +471,20 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
         country = rep.get("country") or "-"
         gn = rep.get("gn_classification", "-")
         gn_color = {"malicious": "#e5484d", "benign": "#7dd3c0"}.get(gn, "#93a7b8")
+        kb = rep.get("known_bad")
+        kb_cell = (f'<span style="color:#ff6b6b;font-weight:600" title="{rep.get("bad_sources","")}">BAD</span>'
+                   if kb else '<span style="color:#5e7385">-</span>')
+        asn = rep.get("asn")
+        asn_cell = f"AS{asn}" if asn else "-"
         ip_rows += f"""
         <tr>
           <td style="font-family:monospace;font-size:12px">{ip}</td>
           <td style="text-align:center;font-size:14px">{flag}</td>
           <td style="text-align:right;font-size:12px;font-weight:600">{count}</td>
           <td style="font-size:12px;color:#93a7b8">{proto_str}</td>
+          <td style="font-size:11px;text-align:center">{kb_cell}</td>
           <td style="font-size:12px;color:#93a7b8;text-align:center">{country}</td>
+          <td style="font-size:11px;color:#5e7385;font-family:monospace">{asn_cell}</td>
           <td style="font-size:12px;font-weight:600;text-align:right;color:{abuse_color}">{abuse_str}</td>
           <td style="font-size:11px;color:{gn_color}">{gn}</td>
         </tr>"""
@@ -492,6 +532,8 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
             "country": rep.get("country") or "-",
             "abuse":   rep.get("abuse_score") if rep.get("abuse_score") is not None else "-",
             "gn":      rep.get("gn_classification", "-"),
+            "known_bad": rep.get("known_bad", 0),
+            "asn":     f"AS{rep.get('asn')}" if rep.get("asn") else "-",
         }
 
     unique_records   = [_ip_record(ip, c) for ip, c in ip_counts.most_common()]
@@ -637,7 +679,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
   <div class="card">
     <h2>Top attacker IPs</h2>
     <table>
-      <tr><th>IP</th><th>Risk</th><th>Hits</th><th>Protocol</th><th>Country</th><th>Abuse%</th><th>GreyNoise</th></tr>
+      <tr><th>IP</th><th>Risk</th><th>Hits</th><th>Protocol</th><th>Bad</th><th>Country</th><th>ASN</th><th>Abuse%</th><th>GreyNoise</th></tr>
       {ip_rows}
     </table>
     <div style="font-size:10px;color:#5e7385;margin-top:8px">🔴 ≥50 hits &nbsp; 🟡 ≥10 hits &nbsp; 🟢 &lt;10 hits</div>
