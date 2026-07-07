@@ -12,8 +12,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import boto3
-
 PROFILE = "honeymike"
 BUCKET = "spamtrap-mail-REDACTED-ACCT"
 KEY = "exports/latest.json"
@@ -128,8 +126,11 @@ get seeded.</p>
 
 
 def main():
-    s3 = boto3.Session(profile_name=PROFILE).client("s3")
-    data = json.loads(s3.get_object(Bucket=BUCKET, Key=KEY)["Body"].read())
+    r = subprocess.run(
+        ["aws", "s3", "cp", f"s3://{BUCKET}/{KEY}", "-",
+         "--profile", PROFILE],
+        capture_output=True, check=True)
+    data = json.loads(r.stdout)
     out = render(data)
     if PAGE.exists() and PAGE.read_text() == out:
         print("no change")
@@ -145,6 +146,8 @@ def main():
     subprocess.run(["git", "-C", str(REPO), "commit", "-m",
                     f"Spamtrap report update {data['generated']}"],
                    check=True)
+    # the wazuh box pushes to this repo too; rebase before pushing
+    subprocess.run(["git", "-C", str(REPO), "pull", "--rebase"], check=True)
     subprocess.run(["git", "-C", str(REPO), "push"], check=True)
     print("published")
 
