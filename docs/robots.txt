@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://pumpkinescobar.github.io/honeypot-reports/sitemap.xml
