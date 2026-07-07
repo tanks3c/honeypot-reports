@@ -105,6 +105,10 @@ def render(d):
   th,td{{border:1px solid var(--line);padding:6px 9px;text-align:left;
     vertical-align:top}}
   th{{background:var(--bg-raised);color:var(--ink-dim);font-weight:500}}
+  @media (max-width: 640px) {{
+    .wrap {{ padding: 14px; }}
+    .stat {{ min-width: calc(50% - 8px); }}
+  }}
 </style>
 </head>
 <body><div class="wrap">
