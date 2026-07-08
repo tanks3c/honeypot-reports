@@ -39,10 +39,12 @@
 <p class="mono dim"><a href="index.html">&larr; honeylab</a></p>
 <h1>spamtrap // email threat intel</h1>
 <p class="dim">A catch-all spamtrap domain feeding an automated pipeline:
-SES inbound &rarr; parser &rarr; enrichment (local reputation feeds,
-RDAP domain age, Spamhaus DNSBL, ASN, AbuseIPDB, URLhaus) &rarr;
-sender-family clustering. All indicators on this page are defanged.
-Generated 2026-07-08T10:32:33Z.</p>
+SES inbound &rarr; parser &rarr; enrichment (bulk reputation feeds,
+RDAP domain age, Spamhaus DNSBL, ASN/geo, Shodan InternetDB,
+AbuseIPDB, URLhaus) &rarr; central verdict engine (multi-source
+corroboration, research scanners excluded) &rarr; sender-family
+clustering. All indicators on this page are defanged.
+Generated 2026-07-08T13:35:33Z.</p>
 <div class="stats">
 <div class="stat"><b>5</b>messages</div>
 <div class="stat"><b>5</b>last 7 days</div>
@@ -57,7 +59,7 @@ Generated 2026-07-08T10:32:33Z.</p>
 <h2>young sender domains (&le;90 days old)</h2>
 <div class="tw"><table><thead><tr><th>domain</th><th>registered</th><th>age (days)</th><th>disposable</th><th>msgs</th></tr></thead><tbody><tr><td>scrapple[.]win</td><td>2026-07-07</td><td>0</td><td>no</td><td>5</td></tr></tbody></table></div>
 <h2>source IP reputation</h2>
-<div class="tw"><table><thead><tr><th>ip</th><th>known bad</th><th>abuse score</th><th>cc</th><th>asn / org</th><th>dnsbl</th><th>msgs</th></tr></thead><tbody><tr><td>54[.]240[.]8[.]59</td><td><span class="dim">-</span></td><td>13</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td>1</td></tr><tr><td>54[.]240[.]8[.]221</td><td><span class="dim">-</span></td><td>8</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td>1</td></tr><tr><td>54[.]240[.]8[.]38</td><td><span class="dim">-</span></td><td>7</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td>1</td></tr><tr><td>54[.]240[.]8[.]70</td><td><span class="dim">-</span></td><td>0</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td>1</td></tr><tr><td>54[.]240[.]8[.]195</td><td><span class="dim">-</span></td><td>0</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td>1</td></tr></tbody></table></div>
+<div class="tw"><table><thead><tr><th>ip</th><th>verdict</th><th>known bad</th><th>class</th><th>abuse score</th><th>cc</th><th>asn / org</th><th>open ports</th><th>dnsbl</th><th>msgs</th></tr></thead><tbody><tr><td>54[.]240[.]8[.]59</td><td><b style="color:#93a7b8">no-adverse-data</b> <span class="dim">70%</span></td><td><span class="dim">-</span></td><td>hosting</td><td>13</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td></td><td>1</td></tr><tr><td>54[.]240[.]8[.]221</td><td><b style="color:#93a7b8">no-adverse-data</b> <span class="dim">70%</span></td><td><span class="dim">-</span></td><td>hosting</td><td>8</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td></td><td>1</td></tr><tr><td>54[.]240[.]8[.]38</td><td><b style="color:#93a7b8">no-adverse-data</b> <span class="dim">70%</span></td><td><span class="dim">-</span></td><td>hosting</td><td>7</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td></td><td>1</td></tr><tr><td>54[.]240[.]8[.]70</td><td><b style="color:#93a7b8">no-adverse-data</b> <span class="dim">70%</span></td><td><span class="dim">-</span></td><td>hosting</td><td>0</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td></td><td>1</td></tr><tr><td>54[.]240[.]8[.]195</td><td><b style="color:#93a7b8">no-adverse-data</b> <span class="dim">70%</span></td><td><span class="dim">-</span></td><td>hosting</td><td>0</td><td>US</td><td>AS14618 AMAZON-AES</td><td></td><td></td><td>1</td></tr></tbody></table></div>
 <h2>flagged URLs (URLhaus)</h2>
 <p class="dim">nothing yet</p>
 <h2>recent messages</h2>
