@@ -34,6 +34,7 @@ import os
 import ssl
 import sys
 import json
+import html
 import base64
 import argparse
 import urllib.request
@@ -313,6 +314,7 @@ def overlay_verdicts(enrichment, ips) -> None:
         f = v.get("facts", {})
         e["verdict"] = v.get("verdict")
         e["confidence"] = v.get("confidence")
+        e["rationale"] = v.get("rationale") or {}
         e["klass"] = f.get("class")
         e["open_ports"] = f.get("open_ports") or []
         e["vulns"] = f.get("vulns") or []
@@ -534,9 +536,18 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
         vd_color = {"malicious": "#e5484d", "suspicious": "#f5a623",
                     "benign-scanner": "#46b6c4"}.get(vd, "#5e7385")
         ports = ",".join(str(p) for p in rep.get("open_ports", [])[:6])
-        vd_cell = (f'<span style="color:{vd_color};font-weight:600" '
-                   f'title="confidence {rep.get("confidence")}% | open: {ports}">'
-                   f'{vd}</span>' if vd else '<span style="color:#5e7385">-</span>')
+        rat = rep.get("rationale", {})
+        tip_lines = [rat.get("rule", "")]
+        for ev in rat.get("evidence", []):
+            tip_lines.append(f"- {ev.get('detail', '')}")
+        if rat.get("confidence_basis"):
+            tip_lines.append(f"confidence = {rat['confidence_basis']}")
+        if ports:
+            tip_lines.append(f"open ports: {ports}")
+        vd_tip = html.escape("\n".join(l for l in tip_lines if l))
+        vd_cell = (f'<span style="color:{vd_color};font-weight:600;cursor:help" '
+                   f'title="{vd_tip}">{vd}</span>'
+                   if vd else '<span style="color:#5e7385">-</span>')
         ip_rows += f"""
         <tr>
           <td style="font-family:monospace;font-size:12px">{ip}</td>

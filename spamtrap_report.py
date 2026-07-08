@@ -58,12 +58,28 @@ VCOLOR = {"malicious": "#ff6b6b", "suspicious": "#f5a623",
           "benign-scanner": "#46b6c4", "no-adverse-data": "#93a7b8"}
 
 
+def vtip(v):
+    """Plain-text audit trail for the hover tooltip: the rule, the
+    confidence math, and every checkable piece of evidence."""
+    r = v.get("rationale") or {}
+    lines = [r.get("rule", ""), ""]
+    for e in r.get("evidence", []):
+        detail = e.get("detail", "")
+        ref = e.get("ref")
+        lines.append(f"- {detail}" + (f" [{ref}]" if ref else ""))
+    if r.get("confidence_basis"):
+        lines += ["", f"confidence = {r['confidence_basis']}"]
+    return "\n".join(lines).strip()
+
+
 def vcell(v):
     if not v:
         return '<span class="dim">-</span>'
     col = VCOLOR.get(v["verdict"], "#93a7b8")
-    return (f'<b style="color:{col}">{esc(v["verdict"])}</b> '
-            f'<span class="dim">{esc(v["confidence"])}%</span>')
+    tip = esc(vtip(v))
+    return (f'<span title="{tip}" style="cursor:help">'
+            f'<b style="color:{col}">{esc(v["verdict"])}</b> '
+            f'<span class="dim">{esc(v["confidence"])}%</span></span>')
 
 
 def render(d, verdicts):
@@ -161,6 +177,10 @@ Generated {esc(d["generated"])}.</p>
 <h2>young sender domains (&le;90 days old)</h2>
 {table(["domain", "registered", "age (days)", "disposable", "msgs"], young_rows)}
 <h2>source IP reputation</h2>
+<p class="dim" style="font-size:.85rem">Every verdict is auditable: hover the
+verdict for the rule that fired, the confidence arithmetic, and each source
+with a link to verify it independently. Research scanners are classified
+separately and never counted as malicious.</p>
 {table(["ip", "verdict", "known bad", "class", "abuse score", "cc", "asn / org", "open ports", "dnsbl", "msgs"], ip_rows)}
 <h2>flagged URLs (URLhaus)</h2>
 {table(["url", "threat", "tags"], url_rows)}

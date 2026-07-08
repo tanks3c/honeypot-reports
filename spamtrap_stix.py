@@ -53,7 +53,7 @@ def sid(kind, value):
 
 
 def indicator(value, pattern, name, labels, first, last,
-              confidence=None, sources=()):
+              confidence=None, sources=(), rationale=None):
     obj = {
         "type": "indicator", "spec_version": "2.1",
         "id": sid("indicator", value),
@@ -67,8 +67,22 @@ def indicator(value, pattern, name, labels, first, last,
     }
     if confidence is not None:
         obj["confidence"] = confidence
-    refs = [{"source_name": s, "url": SOURCE_URLS[s]}
-            for s in sources if s in SOURCE_URLS]
+    if rationale:
+        # transparency: the rule that fired + how confidence was derived,
+        # so a consumer can audit the score instead of trusting it blind
+        obj["description"] = (f"{rationale.get('rule', '')}. "
+                              f"Confidence: {rationale.get('confidence_basis', '')}.")
+    # external_references carry both the corroborating sources AND their
+    # per-evidence detail, so every vote is independently checkable
+    refs = []
+    ev_by_src = {e["source"]: e for e in (rationale or {}).get("evidence", [])}
+    for s in sources:
+        ref = {"source_name": s}
+        if s in SOURCE_URLS:
+            ref["url"] = SOURCE_URLS[s]
+        if s in ev_by_src and ev_by_src[s].get("detail"):
+            ref["description"] = ev_by_src[s]["detail"]
+        refs.append(ref)
     if refs:
         obj["external_references"] = refs
     return obj
@@ -131,7 +145,8 @@ def main():
                 ip["ip"], f"[ipv4-addr:value = '{ip['ip']}']", name,
                 ["malicious-activity"], None, None,
                 confidence=v.get("confidence"),
-                sources=v.get("votes", [])))
+                sources=v.get("votes", []),
+                rationale=v.get("rationale")))
         elif (ip.get("abuse_score") or 0) >= 25:
             # fallback path when verdicts.json is unavailable
             objects.append(indicator(
