@@ -413,6 +413,34 @@ def main():
                 break
 
     print(f"[+] Wrote {OUT_CSV}")
+    upload_ip_list(ips)
+
+
+def upload_ip_list(ips):
+    """Publish the day's distinct attacker IPs to the S3 enrichment bus so
+    the central intel-enrich engine (homebase) can enrich them. Best-effort:
+    never fails the enrichment run."""
+    bucket = os.environ.get("ENRICH_BUCKET")
+    if not bucket:
+        print("[warn] ENRICH_BUCKET not set, skipping IP-list upload")
+        return
+    body = json.dumps({"generated": datetime.now(timezone.utc).isoformat(),
+                       "source": "wazuh-dionaea", "ips": sorted(ips)})
+    try:
+        try:
+            import boto3
+            boto3.client("s3").put_object(
+                Bucket=bucket, Key="enrichment/wazuh-ips.json",
+                Body=body.encode(), ContentType="application/json")
+        except ImportError:
+            import subprocess
+            subprocess.run(
+                ["aws", "s3", "cp", "-",
+                 f"s3://{bucket}/enrichment/wazuh-ips.json"],
+                input=body.encode(), check=True, capture_output=True)
+        print(f"[+] Uploaded {len(ips)} IPs to enrichment/wazuh-ips.json")
+    except Exception as e:
+        print(f"[warn] enrichment IP-list upload failed: {e}")
 
 
 if __name__ == "__main__":
