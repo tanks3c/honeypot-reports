@@ -192,8 +192,10 @@ def main():
         print("no change")
         return
     PAGE.write_text(out)
-    subprocess.run(["git", "-C", str(REPO), "add", "docs/spamtrap.html"],
-                   check=True)
+    # stage the STIX bundle too: the chained stix step regenerates it and a
+    # dirty tree breaks the pull --rebase below
+    subprocess.run(["git", "-C", str(REPO), "add", "docs/spamtrap.html",
+                    "docs/stix-bundle.json"], check=True)
     r = subprocess.run(["git", "-C", str(REPO), "diff", "--cached",
                         "--quiet"])
     if r.returncode == 0:
