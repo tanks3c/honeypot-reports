@@ -34,7 +34,6 @@ import os
 import ssl
 import sys
 import json
-import html
 import base64
 import argparse
 import urllib.request
@@ -544,7 +543,11 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
             tip_lines.append(f"confidence = {rat['confidence_basis']}")
         if ports:
             tip_lines.append(f"open ports: {ports}")
-        vd_tip = html.escape("\n".join(l for l in tip_lines if l))
+        # NOTE: build_html uses a local var named `html`, which shadows the
+        # html module here, so escape manually rather than html.escape().
+        vd_tip = ("\n".join(l for l in tip_lines if l)
+                  .replace("&", "&amp;").replace("<", "&lt;")
+                  .replace(">", "&gt;").replace('"', "&quot;"))
         vd_cell = (f'<span style="color:{vd_color};font-weight:600;cursor:help" '
                    f'title="{vd_tip}">{vd}</span>'
                    if vd else '<span style="color:#5e7385">-</span>')
