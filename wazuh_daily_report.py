@@ -270,6 +270,60 @@ def load_enrichment(db_path: str, ips) -> dict:
     return out
 
 
+def overlay_verdicts(enrichment, ips) -> None:
+    """
+    Overlay central verdicts (enrichment/verdicts.json on the S3 bus,
+    written by the homebase intel-enrich engine) onto the local cache
+    data. Fully best-effort: no bucket config, no boto3/aws-cli, or no
+    object yet means the report simply renders from ip_cache.db alone.
+    """
+    from pathlib import Path as _Path
+    bucket = os.environ.get("ENRICH_BUCKET")
+    if not bucket:  # same untracked .env the enricher uses
+        env = _Path(__file__).parent / ".env"
+        if env.exists():
+            for line in env.read_text().splitlines():
+                if line.startswith("ENRICH_BUCKET="):
+                    bucket = line.split("=", 1)[1].strip()
+    if not bucket:
+        return
+    try:
+        try:
+            import boto3
+            body = boto3.client("s3").get_object(
+                Bucket=bucket, Key="enrichment/verdicts.json")["Body"].read()
+        except ImportError:
+            import subprocess
+            body = subprocess.run(
+                ["aws", "s3", "cp",
+                 f"s3://{bucket}/enrichment/verdicts.json", "-"],
+                capture_output=True, check=True).stdout
+        verdicts = json.loads(body).get("ips", {})
+    except Exception as exc:
+        print(f"[WARN] central verdicts unavailable: {exc}", file=sys.stderr)
+        return
+    n = 0
+    for ip in ips:
+        v = verdicts.get(ip)
+        if not v:
+            continue
+        e = enrichment.setdefault(ip, {"abuse_score": None, "country": "",
+                                       "gn_classification": "unknown",
+                                       "gn_name": ""})
+        f = v.get("facts", {})
+        e["verdict"] = v.get("verdict")
+        e["confidence"] = v.get("confidence")
+        e["klass"] = f.get("class")
+        e["open_ports"] = f.get("open_ports") or []
+        e["vulns"] = f.get("vulns") or []
+        if f.get("asn") and not e.get("asn"):
+            e["asn"], e["org"] = f["asn"], f.get("org")
+        if f.get("country") and not e.get("country"):
+            e["country"] = f["country"]
+        n += 1
+    print(f"[+] central verdicts overlaid on {n} IPs")
+
+
 
 # ===========================================================================
 # Below: protocol map, drill-down JS, classify_events, and build_html.
@@ -476,12 +530,20 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
                    if kb else '<span style="color:#5e7385">-</span>')
         asn = rep.get("asn")
         asn_cell = f"AS{asn}" if asn else "-"
+        vd = rep.get("verdict")
+        vd_color = {"malicious": "#e5484d", "suspicious": "#f5a623",
+                    "benign-scanner": "#46b6c4"}.get(vd, "#5e7385")
+        ports = ",".join(str(p) for p in rep.get("open_ports", [])[:6])
+        vd_cell = (f'<span style="color:{vd_color};font-weight:600" '
+                   f'title="confidence {rep.get("confidence")}% | open: {ports}">'
+                   f'{vd}</span>' if vd else '<span style="color:#5e7385">-</span>')
         ip_rows += f"""
         <tr>
           <td style="font-family:monospace;font-size:12px">{ip}</td>
           <td style="text-align:center;font-size:14px">{flag}</td>
           <td style="text-align:right;font-size:12px;font-weight:600">{count}</td>
           <td style="font-size:12px;color:#93a7b8">{proto_str}</td>
+          <td style="font-size:11px">{vd_cell}</td>
           <td style="font-size:11px;text-align:center">{kb_cell}</td>
           <td style="font-size:12px;color:#93a7b8;text-align:center">{country}</td>
           <td style="font-size:11px;color:#5e7385;font-family:monospace">{asn_cell}</td>
@@ -679,7 +741,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
   <div class="card">
     <h2>Top attacker IPs</h2>
     <table>
-      <tr><th>IP</th><th>Risk</th><th>Hits</th><th>Protocol</th><th>Bad</th><th>Country</th><th>ASN</th><th>Abuse%</th><th>GreyNoise</th></tr>
+      <tr><th>IP</th><th>Risk</th><th>Hits</th><th>Protocol</th><th>Verdict</th><th>Bad</th><th>Country</th><th>ASN</th><th>Abuse%</th><th>GreyNoise</th></tr>
       {ip_rows}
     </table>
     <div style="font-size:10px;color:#5e7385;margin-top:8px">🔴 ≥50 hits &nbsp; 🟡 ≥10 hits &nbsp; 🟢 &lt;10 hits</div>
@@ -826,6 +888,7 @@ def main():
 
     enrichment = load_enrichment(args.enrich_db, data["src_ip_counts"].keys())
     print(f"[*] IPs with cached reputation: {len(enrichment)}/{data['unique_ips']}")
+    overlay_verdicts(enrichment, data["src_ip_counts"].keys())
 
     source_label = f"Wazuh indexer ({INDEX_PATTERN})"
     html = build_html(data, args.hours, source_label, enrichment)

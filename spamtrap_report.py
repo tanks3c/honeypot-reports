@@ -54,7 +54,19 @@ def table(headers, rows):
     return f'<div class="tw"><table><thead><tr>{h}</tr></thead><tbody>{b}</tbody></table></div>'
 
 
-def render(d):
+VCOLOR = {"malicious": "#ff6b6b", "suspicious": "#f5a623",
+          "benign-scanner": "#46b6c4", "no-adverse-data": "#93a7b8"}
+
+
+def vcell(v):
+    if not v:
+        return '<span class="dim">-</span>'
+    col = VCOLOR.get(v["verdict"], "#93a7b8")
+    return (f'<b style="color:{col}">{esc(v["verdict"])}</b> '
+            f'<span class="dim">{esc(v["confidence"])}%</span>')
+
+
+def render(d, verdicts):
     t = d["totals"]
     camp_rows = [[esc(c["kind"]), dz(c["ckey"]), esc(c["member_count"]),
                   esc(c["distinct_addrs"]),
@@ -70,11 +82,16 @@ def render(d):
             return ('<b style="color:#ff6b6b">BAD</b> '
                     f'<span class="dim">{esc(x["bad_sources"] or "")}</span>')
         return '<span class="dim">-</span>'
-    ip_rows = [[dz(x["ip"]), badflag(x), esc(x["abuse_score"]),
-                esc(x["country"]),
+    def iprow(x):
+        v = verdicts.get(x["ip"])
+        f = (v or {}).get("facts", {})
+        ports = ",".join(str(p) for p in (f.get("open_ports") or [])[:8])
+        return [dz(x["ip"]), vcell(v), badflag(x),
+                esc(f.get("class") or ""),
+                esc(x["abuse_score"]), esc(x["country"]),
                 esc(f'AS{x["asn"]} {x["org"]}') if x.get("asn") else "",
-                esc(x["dnsbl"] or ""), esc(x["msg_count"])]
-               for x in d["top_ips"]]
+                esc(ports), esc(x["dnsbl"] or ""), esc(x["msg_count"])]
+    ip_rows = [iprow(x) for x in d["top_ips"]]
     url_rows = [[dz(u["url"]), esc(u["threat"]), esc(u["tags"] or "")]
                 for u in d.get("flagged_urls", [])]
     recent_rows = [[esc((m["ingested_at"] or "")[:16]), dz(m["from_addr"]),
@@ -124,9 +141,11 @@ def render(d):
 <p class="mono dim"><a href="index.html">&larr; honeylab</a></p>
 <h1>spamtrap // email threat intel</h1>
 <p class="dim">A catch-all spamtrap domain feeding an automated pipeline:
-SES inbound &rarr; parser &rarr; enrichment (local reputation feeds,
-RDAP domain age, Spamhaus DNSBL, ASN, AbuseIPDB, URLhaus) &rarr;
-sender-family clustering. All indicators on this page are defanged.
+SES inbound &rarr; parser &rarr; enrichment (bulk reputation feeds,
+RDAP domain age, Spamhaus DNSBL, ASN/geo, Shodan InternetDB,
+AbuseIPDB, URLhaus) &rarr; central verdict engine (multi-source
+corroboration, research scanners excluded) &rarr; sender-family
+clustering. All indicators on this page are defanged.
 Generated {esc(d["generated"])}.</p>
 <div class="stats">
 <div class="stat"><b>{esc(t["messages"])}</b>messages</div>
@@ -142,7 +161,7 @@ Generated {esc(d["generated"])}.</p>
 <h2>young sender domains (&le;90 days old)</h2>
 {table(["domain", "registered", "age (days)", "disposable", "msgs"], young_rows)}
 <h2>source IP reputation</h2>
-{table(["ip", "known bad", "abuse score", "cc", "asn / org", "dnsbl", "msgs"], ip_rows)}
+{table(["ip", "verdict", "known bad", "class", "abuse score", "cc", "asn / org", "open ports", "dnsbl", "msgs"], ip_rows)}
 <h2>flagged URLs (URLhaus)</h2>
 {table(["url", "threat", "tags"], url_rows)}
 <h2>recent messages</h2>
@@ -161,7 +180,14 @@ def main():
          "--profile", PROFILE],
         capture_output=True, check=True)
     data = json.loads(r.stdout)
-    out = render(data)
+    try:
+        v = subprocess.run(
+            ["aws", "s3", "cp", f"s3://{BUCKET}/enrichment/verdicts.json",
+             "-", "--profile", PROFILE], capture_output=True, check=True)
+        verdicts = json.loads(v.stdout).get("ips", {})
+    except Exception:
+        verdicts = {}  # central engine output missing; page degrades
+    out = render(data, verdicts)
     if PAGE.exists() and PAGE.read_text() == out:
         print("no change")
         return

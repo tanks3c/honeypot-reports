@@ -29,19 +29,32 @@ def _conf(key):
 PROFILE = _conf("PROFILE")
 BUCKET = _conf("BUCKET")
 KEY = "exports/latest.json"
+VERDICTS_KEY = "enrichment/verdicts.json"
 OUT = REPO / "docs" / "stix-bundle.json"
 
 # stable namespace for this producer's deterministic IDs
 NS = uuid.UUID("6f9619ff-8b86-d011-b42d-00c04fc964ff")
 IDENTITY_ID = "identity--" + str(uuid.uuid5(NS, "spamtrap-producer"))
+# standard STIX 2.1 TLP:WHITE/CLEAR marking-definition
+TLP_WHITE = "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
+
+SOURCE_URLS = {
+    "threatfox": "https://threatfox.abuse.ch/",
+    "ipsum": "https://github.com/stamparm/ipsum",
+    "firehol": "https://iplists.firehol.org/",
+    "abuseipdb": "https://www.abuseipdb.com/",
+    "spamhaus": "https://www.spamhaus.org/",
+    "otx": "https://otx.alienvault.com/",
+}
 
 
 def sid(kind, value):
     return f"{kind}--" + str(uuid.uuid5(NS, f"{kind}:{value}"))
 
 
-def indicator(value, pattern, name, labels, first, last):
-    return {
+def indicator(value, pattern, name, labels, first, last,
+              confidence=None, sources=()):
+    obj = {
         "type": "indicator", "spec_version": "2.1",
         "id": sid("indicator", value),
         "created_by_ref": IDENTITY_ID,
@@ -50,13 +63,29 @@ def indicator(value, pattern, name, labels, first, last):
         "name": name, "pattern": pattern, "pattern_type": "stix",
         "valid_from": first or "2026-01-01T00:00:00Z",
         "labels": labels,
+        "object_marking_refs": [TLP_WHITE],
     }
+    if confidence is not None:
+        obj["confidence"] = confidence
+    refs = [{"source_name": s, "url": SOURCE_URLS[s]}
+            for s in sources if s in SOURCE_URLS]
+    if refs:
+        obj["external_references"] = refs
+    return obj
+
+
+def s3_json(key):
+    r = subprocess.run(["aws", "s3", "cp", f"s3://{BUCKET}/{key}", "-",
+                        "--profile", PROFILE], capture_output=True, check=True)
+    return json.loads(r.stdout)
 
 
 def main():
-    r = subprocess.run(["aws", "s3", "cp", f"s3://{BUCKET}/{KEY}", "-",
-                        "--profile", PROFILE], capture_output=True, check=True)
-    d = json.loads(r.stdout)
+    d = s3_json(KEY)
+    try:
+        verdicts = s3_json(VERDICTS_KEY).get("ips", {})
+    except Exception:
+        verdicts = {}  # central engine not yet published; degrade gracefully
 
     objects = [{
         "type": "identity", "spec_version": "2.1", "id": IDENTITY_ID,
@@ -64,6 +93,11 @@ def main():
         "name": "honeylab spamtrap", "identity_class": "system",
         "description": "Automated email spamtrap. IOCs from unsolicited mail "
                        "to a seeded catch-all domain.",
+    }, {
+        "type": "marking-definition", "spec_version": "2.1",
+        "id": TLP_WHITE, "created": "2017-01-20T00:00:00.000Z",
+        "definition_type": "tlp", "name": "TLP:WHITE",
+        "definition": {"tlp": "white"},
     }]
 
     for c in d.get("campaigns", []):
@@ -84,7 +118,22 @@ def main():
                 ["malicious-activity", "anomalous-activity"], None, None))
 
     for ip in d.get("top_ips", []):
-        if (ip.get("abuse_score") or 0) >= 25:
+        v = verdicts.get(ip["ip"])
+        if v:
+            # central verdict engine drives inclusion; never publish
+            # research scanners or unflagged IPs as indicators
+            if v["verdict"] not in ("malicious", "suspicious"):
+                continue
+            malware = (v.get("reputation") or {}).get("malware")
+            name = f"spam source IP ({v['verdict']}"
+            name += f", {malware})" if malware else ")"
+            objects.append(indicator(
+                ip["ip"], f"[ipv4-addr:value = '{ip['ip']}']", name,
+                ["malicious-activity"], None, None,
+                confidence=v.get("confidence"),
+                sources=v.get("votes", [])))
+        elif (ip.get("abuse_score") or 0) >= 25:
+            # fallback path when verdicts.json is unavailable
             objects.append(indicator(
                 ip["ip"], f"[ipv4-addr:value = '{ip['ip']}']",
                 f"spam source IP (AbuseIPDB {ip['abuse_score']})",
