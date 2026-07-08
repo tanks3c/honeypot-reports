@@ -1,6 +1,6 @@
 {
  "type": "bundle",
- "id": "bundle--4ae38afe-fd68-5c0a-95b3-baffd42abab1",
+ "id": "bundle--1f4645da-1f7b-5ce7-b026-16bacefb74b8",
  "objects": [
   {
    "type": "identity",
@@ -13,6 +13,17 @@
    "description": "Automated email spamtrap. IOCs from unsolicited mail to a seeded catch-all domain."
   },
   {
+   "type": "marking-definition",
+   "spec_version": "2.1",
+   "id": "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9",
+   "created": "2017-01-20T00:00:00.000Z",
+   "definition_type": "tlp",
+   "name": "TLP:WHITE",
+   "definition": {
+    "tlp": "white"
+   }
+  },
+  {
    "type": "indicator",
    "spec_version": "2.1",
    "id": "indicator--d176b2ec-059c-5d01-aa92-a0d604ed692c",
@@ -26,6 +37,9 @@
    "labels": [
     "malicious-activity",
     "phishing"
+   ],
+   "object_marking_refs": [
+    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ]
   },
   {
@@ -42,6 +56,9 @@
    "labels": [
     "malicious-activity",
     "phishing"
+   ],
+   "object_marking_refs": [
+    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ]
   },
   {
@@ -58,6 +75,9 @@
    "labels": [
     "malicious-activity",
     "phishing"
+   ],
+   "object_marking_refs": [
+    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ]
   },
   {
@@ -74,6 +94,9 @@
    "labels": [
     "malicious-activity",
     "phishing"
+   ],
+   "object_marking_refs": [
+    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ]
   },
   {
@@ -90,6 +113,9 @@
    "labels": [
     "malicious-activity",
     "phishing"
+   ],
+   "object_marking_refs": [
+    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ]
   },
   {
@@ -106,6 +132,9 @@
    "labels": [
     "malicious-activity",
     "phishing"
+   ],
+   "object_marking_refs": [
+    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ]
   },
   {
@@ -122,6 +151,9 @@
    "labels": [
     "malicious-activity",
     "phishing"
+   ],
+   "object_marking_refs": [
+    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ]
   },
   {
@@ -138,6 +170,9 @@
    "labels": [
     "malicious-activity",
     "phishing"
+   ],
+   "object_marking_refs": [
+    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ]
   },
   {
@@ -154,6 +189,9 @@
    "labels": [
     "malicious-activity",
     "anomalous-activity"
+   ],
+   "object_marking_refs": [
+    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ]
   }
  ]
