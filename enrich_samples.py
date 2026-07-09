@@ -40,6 +40,7 @@ import json
 import time
 import sqlite3
 import argparse
+import subprocess
 import requests
 
 from pathlib import Path
@@ -88,6 +89,38 @@ MB_TTL = 7 * 86400        # family/type/first-seen are ~immutable; refresh weekl
 VT_TTL = 24 * 3600        # AV detections grow over time; refresh daily
 VT_THROTTLE = 15          # free tier is 4 req/min => >=15s between calls
 OUT_CSV = f"samples_{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv"
+
+# abuse.ch uses ONE unified Auth-Key across MalwareBazaar / ThreatFox / URLhaus.
+# intel-enrich already stores it in SSM for the ThreatFox feed, so reuse that
+# param rather than duplicating the secret. Env MB_AUTH_KEY still wins if set.
+MB_KEY_SSM_PARAM  = os.environ.get("MB_KEY_SSM_PARAM", "/spamtrap/abusech-key")
+MB_KEY_AWS_PROFILE = os.environ.get("MB_KEY_AWS_PROFILE", "honeymike")
+MB_KEY_AWS_REGION  = os.environ.get("MB_KEY_AWS_REGION", "us-east-1")
+_MB_KEY_CACHE = {}
+
+
+def _mb_key():
+    """Resolve the abuse.ch Auth-Key: env MB_AUTH_KEY first, else the SSM
+    SecureString param (decrypted via aws-cli). Cached per run; None if
+    unavailable (MalwareBazaar then degrades to '-')."""
+    if os.environ.get("MB_AUTH_KEY"):
+        return os.environ["MB_AUTH_KEY"]
+    if "v" in _MB_KEY_CACHE:
+        return _MB_KEY_CACHE["v"]
+    val = None
+    try:
+        p = subprocess.run(
+            ["aws", "--profile", MB_KEY_AWS_PROFILE, "--region", MB_KEY_AWS_REGION,
+             "ssm", "get-parameter", "--name", MB_KEY_SSM_PARAM,
+             "--with-decryption", "--query", "Parameter.Value", "--output", "text"],
+            capture_output=True, text=True, timeout=20)
+        if p.returncode == 0 and p.stdout.strip() and p.stdout.strip() != "None":
+            val = p.stdout.strip()
+    except Exception:
+        val = None
+    _MB_KEY_CACHE["v"] = val
+    return val
+
 
 # --- Rate-limit circuit breaker (per run) ---
 _LIMITED = {"mb": False, "vt": False}
@@ -237,7 +270,7 @@ def query_malwarebazaar(md5: str):
     """MalwareBazaar get_info. Returns family/file_type/tags/first_seen/sha256,
     or None when the hash is unknown to MB. Raises RateLimited on 429."""
     headers = {}
-    key = os.environ.get("MB_AUTH_KEY")
+    key = _mb_key()
     if key:
         headers["Auth-Key"] = key
     r = requests.post("https://mb-api.abuse.ch/api/v1/",
@@ -297,7 +330,7 @@ def enrich(con, md5):
     cached_mb = cache_get_mb(con, md5)
     if cached_mb:
         rec.update(cached_mb)
-    elif os.environ.get("MB_AUTH_KEY") is None and os.environ.get("MB_ALLOW_NOKEY") is None:
+    elif _mb_key() is None and os.environ.get("MB_ALLOW_NOKEY") is None:
         pass  # no key: skip MB, degrade to '-'
     elif _LIMITED["mb"]:
         pass
@@ -360,8 +393,9 @@ def main():
     else:
         hashes = get_unique_hashes(args.hours)
     print(f"[*] {len(hashes)} distinct hash(es) to enrich")
-    if not os.environ.get("MB_AUTH_KEY"):
-        print("[*] MB_AUTH_KEY unset: MalwareBazaar skipped (family/type/tags '-')")
+    if not _mb_key():
+        print("[*] no abuse.ch key (env or SSM): MalwareBazaar skipped "
+              "(family/type/tags '-')")
     if not os.environ.get("VT_KEY"):
         print("[*] VT_KEY unset: VirusTotal skipped (AV ratio '-')")
 
@@ -378,7 +412,8 @@ def main():
                 print(f"[{i}/{len(hashes)}] RATE LIMIT: virustotal. Cached "
                       f"results still used; uncached hashes retry next run.")
             print(f"[{i}/{len(hashes)}] {md5} "
-                  f"family={rec.get('family')} "
+                  f"family={rec.get('family') or '-'} "
+                  f"type={rec.get('file_type') or '-'} "
                   f"av={rec.get('av_malicious')}/{rec.get('av_total')}")
 
     print(f"[+] Wrote {OUT_CSV}")
