@@ -90,36 +90,54 @@ VT_TTL = 24 * 3600        # AV detections grow over time; refresh daily
 VT_THROTTLE = 15          # free tier is 4 req/min => >=15s between calls
 OUT_CSV = f"samples_{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv"
 
-# abuse.ch uses ONE unified Auth-Key across MalwareBazaar / ThreatFox / URLhaus.
-# intel-enrich already stores it in SSM for the ThreatFox feed, so reuse that
-# param rather than duplicating the secret. Env MB_AUTH_KEY still wins if set.
-MB_KEY_SSM_PARAM  = os.environ.get("MB_KEY_SSM_PARAM", "/spamtrap/abusech-key")
-MB_KEY_AWS_PROFILE = os.environ.get("MB_KEY_AWS_PROFILE", "honeymike")
-MB_KEY_AWS_REGION  = os.environ.get("MB_KEY_AWS_REGION", "us-east-1")
-_MB_KEY_CACHE = {}
+# Secret resolution. Env var wins; else an SSM SecureString param. abuse.ch
+# uses ONE unified Auth-Key across MalwareBazaar / ThreatFox / URLhaus, and
+# intel-enrich already stores it at /spamtrap/abusech-key, so reuse it rather
+# than duplicating the secret. VT key sits alongside it.
+#
+# AWS_KEY_PROFILE selects the profile for the SSM read: default "honeymike"
+# works from homebase; set it EMPTY on the analysis box so the instance role
+# (already in the honeypot account) is used instead of a named profile.
+MB_KEY_SSM_PARAM = os.environ.get("MB_KEY_SSM_PARAM", "/spamtrap/abusech-key")
+VT_KEY_SSM_PARAM = os.environ.get("VT_KEY_SSM_PARAM", "/spamtrap/virustotal-key")
+AWS_KEY_PROFILE  = os.environ.get("AWS_KEY_PROFILE", "honeymike")
+AWS_KEY_REGION   = os.environ.get("AWS_KEY_REGION", "us-east-1")
+_KEY_CACHE = {}
+
+
+def _ssm_secret(param):
+    """Decrypt an SSM SecureString via aws-cli. None on any failure."""
+    args = ["aws"]
+    if AWS_KEY_PROFILE:
+        args += ["--profile", AWS_KEY_PROFILE]
+    args += ["--region", AWS_KEY_REGION, "ssm", "get-parameter", "--name",
+             param, "--with-decryption", "--query", "Parameter.Value",
+             "--output", "text"]
+    try:
+        p = subprocess.run(args, capture_output=True, text=True, timeout=20)
+        if p.returncode == 0 and p.stdout.strip() and p.stdout.strip() != "None":
+            return p.stdout.strip()
+    except Exception:
+        pass
+    return None
 
 
 def _mb_key():
-    """Resolve the abuse.ch Auth-Key: env MB_AUTH_KEY first, else the SSM
-    SecureString param (decrypted via aws-cli). Cached per run; None if
-    unavailable (MalwareBazaar then degrades to '-')."""
+    """abuse.ch Auth-Key: env MB_AUTH_KEY, else SSM. Cached; None => MB '-'."""
     if os.environ.get("MB_AUTH_KEY"):
         return os.environ["MB_AUTH_KEY"]
-    if "v" in _MB_KEY_CACHE:
-        return _MB_KEY_CACHE["v"]
-    val = None
-    try:
-        p = subprocess.run(
-            ["aws", "--profile", MB_KEY_AWS_PROFILE, "--region", MB_KEY_AWS_REGION,
-             "ssm", "get-parameter", "--name", MB_KEY_SSM_PARAM,
-             "--with-decryption", "--query", "Parameter.Value", "--output", "text"],
-            capture_output=True, text=True, timeout=20)
-        if p.returncode == 0 and p.stdout.strip() and p.stdout.strip() != "None":
-            val = p.stdout.strip()
-    except Exception:
-        val = None
-    _MB_KEY_CACHE["v"] = val
-    return val
+    if "mb" not in _KEY_CACHE:
+        _KEY_CACHE["mb"] = _ssm_secret(MB_KEY_SSM_PARAM)
+    return _KEY_CACHE["mb"]
+
+
+def _vt_key():
+    """VirusTotal key: env VT_KEY, else SSM. Cached; None => VT skipped."""
+    if os.environ.get("VT_KEY"):
+        return os.environ["VT_KEY"]
+    if "vt" not in _KEY_CACHE:
+        _KEY_CACHE["vt"] = _ssm_secret(VT_KEY_SSM_PARAM)
+    return _KEY_CACHE["vt"]
 
 
 # --- Rate-limit circuit breaker (per run) ---
@@ -301,7 +319,7 @@ def query_malwarebazaar(md5: str):
 def query_virustotal(md5: str):
     """VirusTotal file report. Returns av_malicious/av_total, or None when the
     hash is unknown to VT. Raises RateLimited on 429."""
-    key = os.environ.get("VT_KEY")
+    key = _vt_key()
     if not key:
         return None
     r = requests.get(f"https://www.virustotal.com/api/v3/files/{md5}",
@@ -349,7 +367,7 @@ def enrich(con, md5):
     cached_vt = cache_get_vt(con, md5)
     if cached_vt:
         rec.update(cached_vt)
-    elif not os.environ.get("VT_KEY"):
+    elif not _vt_key():
         pass  # no key: skip VT
     elif _LIMITED["vt"]:
         pass
@@ -382,6 +400,10 @@ def main():
                     help="Read hashes from captures_YYYYMMDD.json "
                          "(dionaea_downloads.py). Preferred: the indexer has no "
                          "download events.")
+    ap.add_argument("--embed", action="store_true",
+                    help="With --captures-json: write enrichment back into that "
+                         "JSON as a `samples` map so the report can read it "
+                         "without the shared cache DB.")
     args = ap.parse_args()
 
     con = init_cache()
@@ -396,8 +418,8 @@ def main():
     if not _mb_key():
         print("[*] no abuse.ch key (env or SSM): MalwareBazaar skipped "
               "(family/type/tags '-')")
-    if not os.environ.get("VT_KEY"):
-        print("[*] VT_KEY unset: VirusTotal skipped (AV ratio '-')")
+    if not _vt_key():
+        print("[*] no VirusTotal key (env or SSM): VirusTotal skipped (AV '-')")
 
     with open(OUT_CSV, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
@@ -417,6 +439,35 @@ def main():
                   f"av={rec.get('av_malicious')}/{rec.get('av_total')}")
 
     print(f"[+] Wrote {OUT_CSV}")
+
+    if args.embed and args.captures_json:
+        embed_into_captures(con, args.captures_json, hashes)
+
+
+def embed_into_captures(con, path, hashes):
+    """Write the enrichment for `hashes` into the captures JSON as a top-level
+    `samples` map {md5: {family, file_type, tags, av_malicious, av_total,
+    first_seen}}. Lets the report read sample intel straight from the file, so
+    the pull+enrich can run on a different host than the report with no shared
+    cache DB."""
+    from pathlib import Path as _Path
+    p = _Path(path)
+    try:
+        doc = json.loads(p.read_text())
+    except (ValueError, OSError) as e:
+        print(f"[warn] cannot embed into {path}: {e}", file=sys.stderr)
+        return
+    samples = {}
+    for md5 in hashes:
+        r = _row(con, md5)
+        if not r:
+            continue
+        samples[md5] = {"family": r[1] or "", "file_type": r[2] or "",
+                        "tags": r[3] or "", "first_seen": r[4] or "",
+                        "av_malicious": r[6], "av_total": r[7]}
+    doc["samples"] = samples
+    p.write_text(json.dumps(doc, indent=2), encoding="utf-8")
+    print(f"[+] embedded {len(samples)} sample record(s) into {path}")
 
 
 if __name__ == "__main__":

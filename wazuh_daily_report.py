@@ -368,6 +368,20 @@ def load_captures_json(path: str, hours: int | None = None) -> list:
     return out
 
 
+def load_embedded_samples(path: str) -> dict:
+    """Read the `samples` enrichment map embedded in captures_YYYYMMDD.json by
+    `enrich_samples.py --embed`. Lets the report get sample intel from the same
+    file as the captures, with no shared cache DB. Missing key/file -> {}."""
+    from pathlib import Path as _Path
+    p = _Path(path)
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text()).get("samples", {}) or {}
+    except (ValueError, OSError):
+        return {}
+
+
 def _defang(url: str) -> str:
     """Neutralize a URL so it can't be accidentally clicked/fetched from the
     rendered HTML report. http->hxxp, . -> [.]"""
@@ -1236,8 +1250,14 @@ def main():
     print(f"[*] IPs with cached reputation: {len(enrichment)}/{data['unique_ips']}")
     overlay_verdicts(enrichment, data["src_ip_counts"].keys())
 
-    sample_enrichment = load_sample_enrichment(args.enrich_db, data["unique_hashes"])
-    print(f"[*] Hashes with cached intel: {len(sample_enrichment)}/"
+    # Prefer enrichment embedded in the captures JSON (enrich_samples --embed);
+    # fall back to the shared cache DB when it isn't there.
+    sample_enrichment = {}
+    if args.captures_json:
+        sample_enrichment = load_embedded_samples(args.captures_json)
+    if not sample_enrichment:
+        sample_enrichment = load_sample_enrichment(args.enrich_db, data["unique_hashes"])
+    print(f"[*] Hashes with intel: {len(sample_enrichment)}/"
           f"{len(data['unique_hashes'])}")
 
     source_label = f"Wazuh indexer ({INDEX_PATTERN})"
