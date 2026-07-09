@@ -110,6 +110,69 @@ Two values at the top of `enrich_ips.py` match the environment:
 - `INDEX = "wazuh-alerts-4.x-*"`
 - `SRC_IP_FIELD = "data.src_ip"`
 
+## Sample Enrichment Pipeline
+
+`enrich_samples.py` is the malware-side sibling of `enrich_ips.py`. Where the IP
+pipeline turns an attacker IP into a reputation verdict, this turns a captured
+Dionaea sample (MD5) into a malware verdict: `ELF/Mirai, 41/64 AV detections,
+first seen 2026-06`. It closes the gap where the pipeline saw connections but
+never the payloads Dionaea actually captured.
+
+### What it does
+
+1. Pull the distinct MD5 hashes Dionaea captured over the last 24 hours from the
+   indexer (matches on the presence of a hash field, since captures are a
+   different event shape than accept events).
+2. Check the shared `ip_cache.db` (`samples` table) before any API call.
+3. On cache miss, query MalwareBazaar and, if a key is present, VirusTotal.
+4. Write results to cache with per-source TTLs (MalwareBazaar 7 days, VirusTotal
+   24 hours), then flatten to `samples_YYYYMMDD.csv`.
+
+`wazuh_daily_report.py` reads the `samples` table to render the "Malware
+captured" panel. Missing keys, missing rows, or an absent table degrade to `-`;
+they never fail the report.
+
+### Fields added
+
+| Source | Field added | Purpose |
+|---|---|---|
+| MalwareBazaar | signature (family), file type, tags, first seen, sha256 | Sample identity and lineage |
+| VirusTotal | AV malicious / total ratio | Cross-engine detection confidence |
+
+### Setup
+
+Add to the same `.env` (both optional; each degrades gracefully if absent):
+
+```
+MB_AUTH_KEY=your_malwarebazaar_key
+VT_KEY=your_virustotal_key
+```
+
+### Run
+
+```
+.venv/bin/python enrich_samples.py
+.venv/bin/python enrich_samples.py --hash <md5>   # one hash, skips the indexer
+```
+
+### Schedule
+
+Daily cron on the analysis box, after `enrich_ips.py` so the report has both:
+
+```
+0 6 * * * cd /home/ssm-user/honeypot-reports && .venv/bin/python enrich_samples.py >> cron.log 2>&1
+```
+
+### Known limits
+
+- VirusTotal free tier is 4 lookups per minute; the script throttles 15 seconds
+  per uncached hash and trips a per-run circuit breaker on HTTP 429.
+- MalwareBazaar now requires a free `Auth-Key`. Without `MB_AUTH_KEY`, family /
+  file type / tags render as `-`; the rest of the report is unaffected.
+- The candidate hash-field paths in `_MD5_FIELDS` (shared with the report) are a
+  best-effort superset. Confirm the live indexer's real field name and prune to
+  it once verified.
+
 ## Reports
 
 | Date | Source IP | Activity | Disposition |
@@ -125,6 +188,7 @@ Two values at the top of `enrich_ips.py` match the environment:
 | Search and dashboards | OpenSearch Dashboards (DQL) |
 | Raw data analysis | sqlite3, Python, pandas |
 | IP enrichment | enrich_ips.py (AbuseIPDB, GreyNoise), IPinfo, APNIC WHOIS |
+| Sample enrichment | enrich_samples.py (MalwareBazaar, VirusTotal) |
 | Cache | SQLite |
 | Framework | MITRE ATT&CK |
 
