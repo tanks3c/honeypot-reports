@@ -173,6 +173,28 @@ Daily cron on the analysis box, after `enrich_ips.py` so the report has both:
   best-effort superset. Confirm the live indexer's real field name and prune to
   it once verified.
 
+## Capture Source (sqlite ground truth)
+
+The Wazuh indexer carries only `accept` connections, not Dionaea download
+events, so captured malware never reaches the SIEM. Captures live only in the
+honeypot's sqlite (`/opt/dionaea/data/dionaea.sqlite`, `downloads` table).
+
+`dionaea_downloads.py` reads that table directly over SSM (`send-command`,
+read-only query, nothing written on the honeypot) and emits
+`captures_YYYYMMDD.json` in the shape the report renders. The honeypot has no
+outbound internet (egress locked to the SIEM + SSM endpoints), so SSM is the
+only channel in; whoever runs it needs `ssm:SendCommand` to the honeypot (the
+`honeymike` profile has it).
+
+```
+python3 dionaea_downloads.py
+python3 wazuh_daily_report.py --captures-json captures_$(date -u +%Y%m%d).json
+python3 enrich_samples.py     --captures-json captures_$(date -u +%Y%m%d).json
+```
+
+`--captures-json` is the real capture path; without it the report/enricher fall
+back to the indexer, which returns zero download events.
+
 ## Reports
 
 | Date | Source IP | Activity | Disposition |

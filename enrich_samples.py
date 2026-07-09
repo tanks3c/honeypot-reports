@@ -36,6 +36,7 @@ Usage:
 import os
 import csv
 import sys
+import json
 import time
 import sqlite3
 import argparse
@@ -174,6 +175,24 @@ def cache_put_vt(con, md5, f):
 # ---------------------------------------------------------------------------
 # Pull distinct captured hashes from the indexer.
 # ---------------------------------------------------------------------------
+def get_hashes_from_json(path: str) -> list:
+    """Distinct MD5s from a captures_YYYYMMDD.json produced by
+    dionaea_downloads.py. This is the real source: the indexer has no
+    download events. Missing/unreadable file -> empty list."""
+    from pathlib import Path as _Path
+    p = _Path(path)
+    if not p.exists():
+        print(f"[warn] captures file not found: {path}", file=sys.stderr)
+        return []
+    try:
+        doc = json.loads(p.read_text())
+    except (ValueError, OSError) as e:
+        print(f"[warn] captures file unreadable: {e}", file=sys.stderr)
+        return []
+    return sorted({str(c["md5"]).lower() for c in doc.get("captures", [])
+                   if c.get("md5")})
+
+
 def get_unique_hashes(hours: int) -> list:
     """Distinct MD5 hashes Dionaea captured in the window. Best-effort: any
     indexer error returns an empty list rather than aborting the run."""
@@ -326,12 +345,18 @@ def main():
     ap.add_argument("--hours", type=int, default=24,
                     help="Lookback window for pulling captured hashes (default 24)")
     ap.add_argument("--hash", help="Enrich a single MD5 and exit (no indexer query)")
+    ap.add_argument("--captures-json", default=None,
+                    help="Read hashes from captures_YYYYMMDD.json "
+                         "(dionaea_downloads.py). Preferred: the indexer has no "
+                         "download events.")
     args = ap.parse_args()
 
     con = init_cache()
 
     if args.hash:
         hashes = [args.hash.lower()]
+    elif args.captures_json:
+        hashes = get_hashes_from_json(args.captures_json)
     else:
         hashes = get_unique_hashes(args.hours)
     print(f"[*] {len(hashes)} distinct hash(es) to enrich")

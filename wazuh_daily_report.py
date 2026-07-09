@@ -321,6 +321,53 @@ def fetch_downloads(hours: int) -> list:
     return captures
 
 
+def load_captures_json(path: str, hours: int | None = None) -> list:
+    """
+    Load captures from a captures_YYYYMMDD.json produced by dionaea_downloads.py
+    (the sqlite ground-truth reader). This is the real capture source: the
+    indexer carries no download events, so fetch_downloads() returns 0 and this
+    file is where captures actually come from. Missing/unreadable file is
+    non-fatal -> empty list.
+    """
+    from pathlib import Path as _Path
+    p = _Path(path)
+    if not p.exists():
+        print(f"[WARN] captures file not found: {path} "
+              f"(run dionaea_downloads.py; report shows no captures)",
+              file=sys.stderr)
+        return []
+    try:
+        doc = json.loads(p.read_text())
+    except (ValueError, OSError) as exc:
+        print(f"[WARN] captures file unreadable: {exc}", file=sys.stderr)
+        return []
+    out = []
+    cutoff = None
+    if hours is not None:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    for c in doc.get("captures", []):
+        ts = _parse_ts(c.get("_ts"))
+        if ts is None:
+            continue
+        if cutoff and ts < cutoff:
+            continue
+        md5 = c.get("md5")
+        if not md5:
+            continue
+        out.append({
+            "_ts":       ts,
+            "src_ip":    c.get("src_ip", "unknown"),
+            "dst_port":  c.get("dst_port", 0),
+            "transport": c.get("transport", ""),
+            "protocol":  c.get("protocol", "unknown"),
+            "url":       c.get("url", ""),
+            "md5":       str(md5).lower(),
+            "size":      c.get("size"),
+            "sha256":    c.get("sha256"),
+        })
+    return out
+
+
 def _defang(url: str) -> str:
     """Neutralize a URL so it can't be accidentally clicked/fetched from the
     rendered HTML report. http->hxxp, . -> [.]"""
@@ -1154,6 +1201,11 @@ def main():
                         help="Path to the IP reputation cache built by "
                              "enrich_ips.py (default ip_cache.db). Missing "
                              "or stale entries render as '-', non-fatal.")
+    parser.add_argument("--captures-json", default=None,
+                        help="Path to captures_YYYYMMDD.json from "
+                             "dionaea_downloads.py (sqlite ground truth). When "
+                             "given, it is the capture source instead of the "
+                             "indexer (which carries no download events).")
     args = parser.parse_args()
 
     INDEXER_URL   = args.url
@@ -1165,8 +1217,13 @@ def main():
     events = fetch_events(args.hours)
     print(f"[*] Accept events pulled: {len(events)}")
 
-    captures = fetch_downloads(args.hours)
-    print(f"[*] Capture (download) events pulled: {len(captures)}")
+    if args.captures_json:
+        captures = load_captures_json(args.captures_json, args.hours)
+        print(f"[*] Captures from sqlite JSON: {len(captures)}")
+    else:
+        captures = fetch_downloads(args.hours)
+        print(f"[*] Capture (download) events pulled from indexer: {len(captures)} "
+              f"(indexer carries no downloads; use --captures-json)")
 
     data = classify_events(events, captures)
     print(f"[*] Accepted connections: {data['total']}")
