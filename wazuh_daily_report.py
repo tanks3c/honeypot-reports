@@ -194,6 +194,191 @@ def fetch_events(hours: int) -> list:
 
 
 # ---------------------------------------------------------------------------
+# Dionaea capture (malware download) ingestion
+#
+# Accept events use connection.type=accept. Download events do NOT: Dionaea
+# emits them via its incident system (dionaea.download.complete), so they are
+# indexed under a different shape. The exact Wazuh field paths depend on the
+# decoder mapping and have NOT been confirmed against the live indexer here
+# (that probe is a reviewed action). So rather than hardcode one guessed path,
+# the adapter matches against a list of candidate paths and uses whichever is
+# actually present. Once field discovery confirms the real names, prune these
+# lists to the single true path per field.
+# ---------------------------------------------------------------------------
+_MD5_FIELDS = ["data.md5_hash", "data.md5hash", "data.md5",
+               "data.download.md5", "data.dionaea.md5_hash",
+               "data.virustotal.md5"]
+_URL_FIELDS = ["data.url", "data.download.url", "data.dionaea.url",
+               "data.uri"]
+_SHA256_FIELDS = ["data.sha256_hash", "data.sha256", "data.download.sha256"]
+_SIZE_FIELDS = ["data.size", "data.download.size", "data.filesize"]
+
+
+def _dig(src, dotted):
+    """Walk a dotted path through nested dicts. Returns None if any hop is
+    missing or a non-dict is encountered."""
+    cur = src
+    for part in dotted.split("."):
+        if not isinstance(cur, dict):
+            return None
+        cur = cur.get(part)
+    return cur
+
+
+def _first(src, fields):
+    """First non-empty value among the candidate dotted paths."""
+    for f in fields:
+        v = _dig(src, f)
+        if v not in (None, "", []):
+            return v
+    return None
+
+
+def adapt_download(hit: dict):
+    """
+    Remap one indexer hit into the flat capture shape the report expects.
+    A hit is a usable capture only if it carries an MD5 hash. Returns None
+    otherwise. Returns:
+        {_ts, src_ip, dst_port, transport, protocol, url, md5, size, sha256}
+    """
+    src = hit.get("_source", {})
+    md5 = _first(src, _MD5_FIELDS)
+    if not md5:
+        return None
+    ts = _parse_ts(_dig(src, "data.timestamp") or src.get("timestamp"))
+    if ts is None:
+        return None
+    d = src.get("data", {}) if isinstance(src.get("data"), dict) else {}
+    conn = d.get("connection", {}) if isinstance(d.get("connection"), dict) else {}
+    try:
+        port = int(d.get("dst_port") or conn.get("local_port") or 0)
+    except (TypeError, ValueError):
+        port = 0
+    try:
+        size = int(_first(src, _SIZE_FIELDS) or 0)
+    except (TypeError, ValueError):
+        size = 0
+    sha256 = _first(src, _SHA256_FIELDS)
+    return {
+        "_ts":       ts,
+        "src_ip":    d.get("src_ip", "unknown"),
+        "dst_port":  port,
+        "transport": conn.get("transport") or conn.get("type") or "",
+        "protocol":  conn.get("protocol", "unknown"),
+        "url":       _first(src, _URL_FIELDS) or "",
+        "md5":       str(md5).lower(),
+        "size":      size,
+        "sha256":    str(sha256).lower() if sha256 else None,
+    }
+
+
+def fetch_downloads(hours: int) -> list:
+    """
+    Pull every Dionaea download (captured sample) in the window via scroll.
+    Mirrors fetch_events but matches on the presence of a hash field rather
+    than connection.type=accept, because captures are a different event shape.
+    Best-effort: a mapping mismatch yields zero captures, never an exception
+    that would kill the whole report.
+    """
+    query = {
+        "size": PAGE_SIZE,
+        "sort": ["_doc"],
+        "query": {"bool": {
+            "must": [{"match": {"rule.groups": RULE_GROUP}}],
+            "should": [{"exists": {"field": f}} for f in _MD5_FIELDS],
+            "minimum_should_match": 1,
+            "filter": [{"range": {"timestamp": {"gte": f"now-{hours}h"}}}],
+        }},
+    }
+    try:
+        page = _indexer_request(
+            f"/{INDEX_PATTERN}/_search?scroll={SCROLL_TTL}", query)
+    except SystemExit:
+        print("[WARN] download query failed; report renders with no captures",
+              file=sys.stderr)
+        return []
+    scroll_id = page.get("_scroll_id")
+    hits = page.get("hits", {}).get("hits", [])
+    captures = []
+    try:
+        while hits:
+            for h in hits:
+                cap = adapt_download(h)
+                if cap:
+                    captures.append(cap)
+            page = _indexer_request(
+                "/_search/scroll",
+                {"scroll": SCROLL_TTL, "scroll_id": scroll_id})
+            scroll_id = page.get("_scroll_id", scroll_id)
+            hits = page.get("hits", {}).get("hits", [])
+    finally:
+        if scroll_id:
+            try:
+                _indexer_request("/_search/scroll",
+                                 {"scroll_id": [scroll_id]}, method="DELETE")
+            except SystemExit:
+                pass
+    return captures
+
+
+def _defang(url: str) -> str:
+    """Neutralize a URL so it can't be accidentally clicked/fetched from the
+    rendered HTML report. http->hxxp, . -> [.]"""
+    if not url:
+        return ""
+    out = url.replace("https://", "hxxps://").replace("http://", "hxxp://")
+    return out.replace(".", "[.]")
+
+
+# ---------------------------------------------------------------------------
+# Sample (hash) enrichment reader. Reads the samples table populated by
+# enrich_samples.py; makes no API calls itself. Missing DB / table / rows are
+# non-fatal: family/type/AV columns render as '-'.
+# Schema: md5, sha256, family, file_type, tags, av_malicious, av_total,
+#         first_seen, mb_ts, vt_ts
+# ---------------------------------------------------------------------------
+def load_sample_enrichment(db_path: str, hashes) -> dict:
+    """Look up cached sample intel for the given MD5 hashes.
+    Returns {md5: {family, file_type, tags, av_malicious, av_total, first_seen}}.
+    """
+    import sqlite3
+    from pathlib import Path as _Path
+
+    out = {}
+    md5s = [h for h in set(hashes) if h]
+    if not md5s:
+        return out
+    if not _Path(db_path).exists():
+        print(f"[WARN] sample enrichment cache not found: {db_path} "
+              f"(malware panel shows '-' for family/type/AV)", file=sys.stderr)
+        return out
+    try:
+        con = sqlite3.connect(db_path)
+        placeholders = ",".join("?" for _ in md5s)
+        try:
+            rows = con.execute(
+                f"SELECT md5, family, file_type, tags, av_malicious, "
+                f"av_total, first_seen FROM samples WHERE md5 IN "
+                f"({placeholders})", md5s).fetchall()
+        except sqlite3.OperationalError:
+            con.close()
+            return out  # samples table not created yet
+        for md5, fam, ftype, tags, av_m, av_t, first_seen in rows:
+            out[md5] = {
+                "family": fam or "",
+                "file_type": ftype or "",
+                "tags": tags or "",
+                "av_malicious": av_m,
+                "av_total": av_t,
+                "first_seen": first_seen or "",
+            }
+        con.close()
+    except sqlite3.Error as exc:
+        print(f"[WARN] sample enrichment read failed: {exc}", file=sys.stderr)
+    return out
+
+
+# ---------------------------------------------------------------------------
 # IP reputation enrichment (reads the existing cache only, makes no API
 # calls itself). Cache is built/refreshed separately by enrich_ips.py.
 # Schema: ip, abuse_score, abuse_reports, country, isp,
@@ -423,9 +608,14 @@ document.addEventListener('keydown', function (e) {
 """
 
 
-def classify_events(events: list[dict]) -> dict:
+def classify_events(events: list[dict], captures: list[dict] | None = None) -> dict:
     """
     Build all aggregations needed for the report panels.
+
+    `captures` (optional) is the list of Dionaea download events from
+    fetch_downloads(). It is aggregated alongside the accept-event stats
+    without touching any existing return key, so this stays backward
+    compatible with callers that pass events only.
     """
     # Filter to accepted inbound connections only
     accepted = [e for e in events if e.get("connection", {}).get("type") == "accept"]
@@ -465,6 +655,12 @@ def classify_events(events: list[dict]) -> dict:
         if ip not in ip_last_seen or ts > ip_last_seen[ip]:
             ip_last_seen[ip] = ts
 
+    # Capture (malware download) aggregation. Non-invasive: new keys only.
+    caps = captures or []
+    captures_by_ip: dict[str, list] = defaultdict(list)
+    for c in caps:
+        captures_by_ip[c.get("src_ip", "unknown")].append(c)
+
     return {
         "total":           total,
         "unique_ips":      len(src_ip_counts),
@@ -477,13 +673,19 @@ def classify_events(events: list[dict]) -> dict:
         "ip_first_seen":   ip_first_seen,
         "ip_last_seen":    ip_last_seen,
         "raw_accepted":    accepted,
+        "captures":        caps,
+        "captures_by_ip":  captures_by_ip,
+        "capture_count":   len(caps),
+        "unique_hashes":   sorted({c["md5"] for c in caps if c.get("md5")}),
     }
 
 
-def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -> str:
+def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
+               sample_enrichment: dict = None) -> str:
     now    = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=hours)
     enrichment = enrichment or {}
+    sample_enrichment = sample_enrichment or {}
 
     total       = data["total"]
     unique_ips  = data["unique_ips"]
@@ -491,6 +693,13 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
     proto_counts = data["protocol_counts"]
     ip_counts   = data["src_ip_counts"]
     hourly      = data["hourly"]
+    captures       = data.get("captures", [])
+    captures_by_ip = data.get("captures_by_ip", {})
+    capture_count  = data.get("capture_count", 0)
+
+    def _esc(s):
+        return (str(s).replace("&", "&amp;").replace("<", "&lt;")
+                .replace(">", "&gt;").replace('"', "&quot;"))
 
     # Top 10 IPs
     top_ips = ip_counts.most_common(10)
@@ -551,9 +760,14 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
         vd_cell = (f'<span style="color:{vd_color};font-weight:600;cursor:help" '
                    f'title="{vd_tip}">{vd}</span>'
                    if vd else '<span style="color:#5e7385">-</span>')
+        # Malware flag: this IP dropped a captured sample in-window.
+        ip_caps = captures_by_ip.get(ip, [])
+        mal_flag = (f' <span title="{len(ip_caps)} sample(s) captured" '
+                    f'style="color:#e5484d;font-weight:700">&#9763;</span>'
+                    if ip_caps else "")
         ip_rows += f"""
         <tr>
-          <td style="font-family:monospace;font-size:12px">{ip}</td>
+          <td style="font-family:monospace;font-size:12px">{ip}{mal_flag}</td>
           <td style="text-align:center;font-size:14px">{flag}</td>
           <td style="text-align:right;font-size:12px;font-weight:600">{count}</td>
           <td style="font-size:12px;color:#93a7b8">{proto_str}</td>
@@ -623,6 +837,40 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
     })
     DRILL_SCRIPT = _DRILL_SCRIPT_TEMPLATE.replace("__DRILL_DATA__", drill_data)
 
+    # ---- Malware captured panel ----
+    capture_rows = ""
+    for c in sorted(captures, key=lambda x: x["_ts"], reverse=True):
+        md5 = c.get("md5", "")
+        se = sample_enrichment.get(md5, {})
+        proto = c.get("protocol", "?")
+        proto_label = PROTOCOL_MAP.get(proto, (proto.upper(), "", "#93A7B8"))[0]
+        url = _defang(c.get("url", ""))
+        url_cell = _esc(url) if url else '<span style="color:#5e7385">-</span>'
+        fam = se.get("family") or "-"
+        fam_color = "#e5484d" if fam not in ("-", "") else "#5e7385"
+        ftype = se.get("file_type") or "-"
+        av_m, av_t = se.get("av_malicious"), se.get("av_total")
+        if av_m is not None and av_t:
+            av_ratio = f"{av_m}/{av_t}"
+            av_color = "#e5484d" if av_m >= av_t * 0.5 else "#f5a623"
+        else:
+            av_ratio, av_color = "-", "#5e7385"
+        capture_rows += f"""
+        <tr>
+          <td style="font-size:11px;color:#93a7b8;font-family:monospace">{c['_ts'].strftime('%m-%d %H:%M:%S')}</td>
+          <td style="font-size:11px;font-family:monospace">{_esc(c.get('src_ip','?'))}</td>
+          <td style="font-size:11px;color:#93a7b8">{proto_label}</td>
+          <td style="font-size:11px;font-family:monospace;color:#f5a623;word-break:break-all;max-width:220px">{url_cell}</td>
+          <td style="font-size:11px;font-family:monospace" title="{_esc(md5)}">{_esc(md5[:16])}&hellip;</td>
+          <td style="font-size:11px;font-weight:600;color:{fam_color}">{_esc(fam)}</td>
+          <td style="font-size:11px;color:#93a7b8">{_esc(ftype)}</td>
+          <td style="font-size:11px;font-weight:600;text-align:right;color:{av_color}">{av_ratio}</td>
+        </tr>"""
+    if not capture_rows:
+        capture_rows = ('<tr><td colspan="8" style="text-align:center;'
+                        'color:#5e7385;font-size:12px;padding:16px">'
+                        'No samples captured in this window.</td></tr>')
+
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -640,6 +888,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
   h2   {{ font-size: 13px; font-weight: 500; color: #93a7b8; margin: 1.5rem 0 .75rem; text-transform: uppercase; letter-spacing: .05em; }}
   .meta  {{ font-size: 12px; color: #5e7385; margin-bottom: 1.5rem; }}
   .grid4 {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.5rem; }}
+  .grid5 {{ display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 1.5rem; }}
   .grid2 {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }}
   .card  {{ background: #13202c; border-radius: 10px; padding: 1rem 1.25rem; border: 1px solid #223344; }}
   .metric-label {{ font-size: 11px; color: #93a7b8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }}
@@ -690,6 +939,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
   @media (max-width: 640px) {{
     body {{ padding: 1rem; }}
     .grid4 {{ grid-template-columns: 1fr 1fr; }}
+    .grid5 {{ grid-template-columns: 1fr 1fr; }}
     .grid2 {{ grid-template-columns: 1fr; }}
     table {{ display: block; overflow-x: auto; white-space: nowrap; }}
     .drill-modal {{ max-width: 94vw; }}
@@ -706,7 +956,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
 </div>
 
 <!-- METRIC ROW -->
-<div class="grid4">
+<div class="grid5">
   <div class="card">
     <div class="metric-label">Total connections</div>
     <div class="metric-value">{total:,}</div>
@@ -731,6 +981,10 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
     <div class="metric-label">Probable scanners (50+ hits)</div>
     <div class="metric-value danger">{scanner_count:,}</div>
     <div class="drill-hint">inspect &rsaquo;</div>
+  </div>
+  <div class="card">
+    <div class="metric-label">Samples captured</div>
+    <div class="metric-value {'danger' if capture_count else ''}">{capture_count:,}</div>
   </div>
 </div>
 
@@ -769,6 +1023,16 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
   </div>
 </div>
 
+<!-- MALWARE CAPTURED -->
+<div class="card" style="margin-bottom:1.5rem">
+  <h2>Malware captured ({capture_count})</h2>
+  <table>
+    <tr><th>Time (UTC)</th><th>Src IP</th><th>Protocol</th><th>URL (defanged)</th><th>MD5</th><th>Family</th><th>File type</th><th>AV</th></tr>
+    {capture_rows}
+  </table>
+  <div style="font-size:10px;color:#5e7385;margin-top:8px">Family / file type / AV ratio from enrich_samples.py (MalwareBazaar + VirusTotal). URLs are defanged for safe rendering.</div>
+</div>
+
 <!-- MITRE MAPPING -->
 <div class="card" style="margin-bottom:1.5rem">
   <h2>MITRE ATT&amp;CK mapping</h2>
@@ -797,6 +1061,12 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None) -
       <td style="font-size:12px">Active Scanning</td>
       <td style="font-size:12px">High-frequency source IPs</td>
       <td style="font-size:12px">{high_freq:,} IPs</td>
+    </tr>
+    <tr>
+      <td style="font-family:monospace;font-size:12px">T1105</td>
+      <td style="font-size:12px">Ingress Tool Transfer</td>
+      <td style="font-size:12px">Captured malware downloads</td>
+      <td style="font-size:12px">{capture_count:,}</td>
     </tr>
   </table>
 </div>
@@ -895,17 +1165,26 @@ def main():
     events = fetch_events(args.hours)
     print(f"[*] Accept events pulled: {len(events)}")
 
-    data = classify_events(events)
+    captures = fetch_downloads(args.hours)
+    print(f"[*] Capture (download) events pulled: {len(captures)}")
+
+    data = classify_events(events, captures)
     print(f"[*] Accepted connections: {data['total']}")
     print(f"[*] Unique IPs:           {data['unique_ips']}")
     print(f"[*] High-frequency IPs:   {len(data['high_freq_ips'])}")
+    print(f"[*] Samples captured:     {data['capture_count']} "
+          f"({len(data['unique_hashes'])} unique hashes)")
 
     enrichment = load_enrichment(args.enrich_db, data["src_ip_counts"].keys())
     print(f"[*] IPs with cached reputation: {len(enrichment)}/{data['unique_ips']}")
     overlay_verdicts(enrichment, data["src_ip_counts"].keys())
 
+    sample_enrichment = load_sample_enrichment(args.enrich_db, data["unique_hashes"])
+    print(f"[*] Hashes with cached intel: {len(sample_enrichment)}/"
+          f"{len(data['unique_hashes'])}")
+
     source_label = f"Wazuh indexer ({INDEX_PATTERN})"
-    html = build_html(data, args.hours, source_label, enrichment)
+    html = build_html(data, args.hours, source_label, enrichment, sample_enrichment)
 
     from pathlib import Path
     out_path = Path(args.out)
