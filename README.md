@@ -195,6 +195,25 @@ python3 enrich_samples.py     --captures-json captures_$(date -u +%Y%m%d).json
 `--captures-json` is the real capture path; without it the report/enricher fall
 back to the indexer, which returns zero download events.
 
+### Scheduling
+
+`capture_pipeline.sh` chains pull -> enrich -> embed -> commit and runs on
+homebase via a systemd user timer (`deploy/honeypot-capture.{service,timer}`,
+every 6h). Homebase is the right host: it has the `honeymike` profile and
+outbound, while the honeypot has neither and the report host has no honeymike
+creds. It commits `captures_latest.json` to the repo; the analysis-box report
+picks it up on its next `git pull` and renders it via `--captures-json`.
+
+```
+cp deploy/honeypot-capture.* ~/.config/systemd/user/
+systemctl --user daemon-reload && systemctl --user enable --now honeypot-capture.timer
+```
+
+Keys are read from SSM (`/spamtrap/abusech-key`, `/spamtrap/virustotal-key`)
+via the `honeymike` profile, so no secrets live in the repo or the timer. On a
+host that uses an instance role instead of a named profile, set
+`AWS_KEY_PROFILE=` (empty) in the environment.
+
 ## Reports
 
 | Date | Source IP | Activity | Disposition |

@@ -1,0 +1,69 @@
+{
+  "generated": "2026-07-09T19:26:31.752724+00:00",
+  "source": "dionaea-sqlite",
+  "instance_id": "i-0b0b4309b4b821173",
+  "captures": [
+    {
+      "_ts": "2026-07-08T22:19:19.487137+00:00",
+      "src_ip": "211.140.151.13",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "8a4e9f688c6d0effd0fa17461352ed3e",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-07-08T22:18:59.459609+00:00",
+      "src_ip": "211.140.151.13",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "8a4e9f688c6d0effd0fa17461352ed3e",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-07-06T11:16:02.225819+00:00",
+      "src_ip": "49.49.250.74",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "beb68e9c7ef18f421df8230c032fe02a",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-07-06T11:13:21.677215+00:00",
+      "src_ip": "49.49.250.74",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "beb68e9c7ef18f421df8230c032fe02a",
+      "size": null,
+      "sha256": null
+    }
+  ],
+  "samples": {
+    "8a4e9f688c6d0effd0fa17461352ed3e": {
+      "family": "",
+      "file_type": "dll",
+      "tags": "dll,OpenCTI.BR,Sandboxed",
+      "first_seen": "2022-07-20",
+      "av_malicious": null,
+      "av_total": null
+    },
+    "beb68e9c7ef18f421df8230c032fe02a": {
+      "family": "",
+      "file_type": "dll",
+      "tags": "",
+      "first_seen": "2023-03-24",
+      "av_malicious": null,
+      "av_total": null
+    }
+  }
+}

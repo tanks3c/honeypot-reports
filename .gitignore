@@ -4,3 +4,6 @@
 *.pyc
 __pycache__/
 .spamtrap.conf
+ip_cache.db
+samples_*.csv
+captures_2*.json
