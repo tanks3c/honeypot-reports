@@ -14,8 +14,8 @@
     "mitre": [
       "T1190"
     ],
-    "notes": "AUTO: SMB/445 inline drop (no URL). Mapped T1190 (internet-facing service exploited, initial access)",
-    "reviewed_on": "2026-07-10T14:08:00+00:00",
+    "notes": "SMB/445 inline drop (no URL). Mapped T1190 (internet-facing service exploited, initial access)",
+    "reviewed_on": "2026-07-10T14:08:39+00:00",
     "status": "verified"
   },
   "beb68e9c7ef18f421df8230c032fe02a": {
