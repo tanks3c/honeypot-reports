@@ -1,0 +1,42 @@
+{
+  "8a4e9f688c6d0effd0fa17461352ed3e": {
+    "auto": {
+      "av_malicious": 60,
+      "av_total": 76,
+      "family": "trojan.barys/dloader",
+      "file_type": "dll",
+      "first_seen": "2022-07-20",
+      "tags": "dll,OpenCTI.BR,Sandboxed"
+    },
+    "family": "trojan.barys/dloader",
+    "file_type": "dll",
+    "first_flagged": "2026-07-10T02:06:33+00:00",
+    "mitre": [
+      "T1190",
+      "T1105"
+    ],
+    "notes": "AUTO: SMB/445 inline drop (no URL). Mapped T1190 (internet-facing service exploited, initial access) + T1105 (payload transfer). T1210 applies only as worm propagation context. Verify family/mapping and edit as needed.",
+    "reviewed_on": null,
+    "status": "pending_review"
+  },
+  "beb68e9c7ef18f421df8230c032fe02a": {
+    "auto": {
+      "av_malicious": 60,
+      "av_total": 74,
+      "family": "trojan.midie/zombieboy",
+      "file_type": "dll",
+      "first_seen": "2023-03-24",
+      "tags": ""
+    },
+    "family": "trojan.midie/zombieboy",
+    "file_type": "dll",
+    "first_flagged": "2026-07-10T02:06:33+00:00",
+    "mitre": [
+      "T1190",
+      "T1105"
+    ],
+    "notes": "AUTO: SMB/445 inline drop (no URL). Mapped T1190 (internet-facing service exploited, initial access) + T1105 (payload transfer). T1210 applies only as worm propagation context. Verify family/mapping and edit as needed.",
+    "reviewed_on": null,
+    "status": "pending_review"
+  }
+}

@@ -24,6 +24,11 @@ fi
 python3 enrich_samples.py --captures-json "$OUT" --embed \
     || echo "[pipeline] enrichment degraded (keys/rate limit); captures still published"
 
+# Flag any new hashes for analyst review (stubs sample_reviews.json) and
+# ping Signal so the review doesn't sit unnoticed. Best-effort.
+python3 review_samples.py sync --notify \
+    || echo "[pipeline] review sync failed; captures still published"
+
 # Regenerate the public malware page + index metric tile from the captures.
 python3 malware_page.py \
     || echo "[pipeline] malware page render failed; captures still published"
@@ -48,11 +53,13 @@ print("yes" if (old is None or sig(old) != sig(new)) else "no")
 PY
 )
 if [ "$CHANGED" = "yes" ]; then
-    git add "$OUT" docs/malware.html docs/index.html
+    git add "$OUT" docs/malware.html docs/index.html sample_reviews.json
     git commit -q -m "Automated capture update $(date -u +%FT%TZ)" || exit 0
     git push -q || echo "[pipeline] git push failed (credential helper?); commit is local"
     echo "[pipeline] published capture update"
 else
     git checkout -- "$OUT" docs/malware.html docs/index.html 2>/dev/null   # drop timestamp-only churn
+    # a review stub for a NEW hash can't happen here (new hash => CHANGED=yes),
+    # so leave sample_reviews.json alone: analyst edits must survive.
     echo "[pipeline] no capture change"
 fi
