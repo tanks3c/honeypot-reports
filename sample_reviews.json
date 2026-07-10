@@ -31,11 +31,10 @@
     "file_type": "dll",
     "first_flagged": "2026-07-10T02:06:33+00:00",
     "mitre": [
-      "T1190",
-      "T1105"
+      "T1190"
     ],
     "notes": "SMB/445 inline drop (no URL). Mapped T1190 (internet-facing service exploited, initial access) ",
-    "reviewed_on": "2026-07-10T14:08:23+00:00",
+    "reviewed_on": "2026-07-10T14:40:55+00:00",
     "status": "verified"
   }
 }
