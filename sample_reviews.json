@@ -34,8 +34,8 @@
       "T1190",
       "T1105"
     ],
-    "notes": "AUTO: SMB/445 inline drop (no URL). Mapped T1190 (internet-facing service exploited, initial access) + T1105 (payload transfer). T1210 applies only as worm propagation context. Verify family/mapping and edit as needed.",
-    "reviewed_on": null,
-    "status": "pending_review"
+    "notes": "SMB/445 inline drop (no URL). Mapped T1190 (internet-facing service exploited, initial access) ",
+    "reviewed_on": "2026-07-10T14:08:23+00:00",
+    "status": "verified"
   }
 }
