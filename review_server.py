@@ -245,7 +245,29 @@ def apply_action(md5: str, form: dict) -> tuple[str, bool]:
     return (msg, False)
 
 
+ALLOWED_HOSTS = {f"{HOST}:{PORT}", f"localhost:{PORT}"}
+ALLOWED_ORIGINS = {f"http://{h}" for h in ALLOWED_HOSTS}
+
+
 class Handler(BaseHTTPRequestHandler):
+    def _host_ok(self) -> bool:
+        # Defeats DNS rebinding: a hostile page resolving its own domain to
+        # 127.0.0.1 still sends its domain in the Host header.
+        return self.headers.get("Host", "") in ALLOWED_HOSTS
+
+    def _origin_ok(self) -> bool:
+        # CSRF guard for state-changing POSTs. Browsers always attach Origin
+        # (or at least Referer) on cross-origin form posts, so any present
+        # value must be ours. Absent both = non-browser client (curl), fine.
+        origin = self.headers.get("Origin")
+        referer = self.headers.get("Referer")
+        if origin is not None:
+            return origin in ALLOWED_ORIGINS
+        if referer is not None:
+            return any(referer.startswith(o + "/") or referer == o
+                       for o in ALLOWED_ORIGINS)
+        return True
+
     def _send(self, body: bytes, code: int = 200):
         self.send_response(code)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -254,6 +276,8 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        if not self._host_ok():
+            return self._send(b"forbidden", 403)
         path = urllib.parse.urlparse(self.path).path
         if path == "/":
             return self._send(render_list())
@@ -262,6 +286,8 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(page("404", '<p><a href="/">back</a></p>'), 404)
 
     def do_POST(self):
+        if not self._host_ok() or not self._origin_ok():
+            return self._send(b"forbidden", 403)
         path = urllib.parse.urlparse(self.path).path
         if not path.startswith("/sample/"):
             return self._send(page("404", '<p><a href="/">back</a></p>'), 404)
