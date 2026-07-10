@@ -80,6 +80,12 @@
   }
   .cta:hover{filter:brightness(1.06);text-decoration:none;transform:translateY(-1px)}
   .cta .arw{font-size:17px;line-height:1}
+  .cta-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .cta.alt{
+    background:transparent;color:var(--signal);
+    border:1px solid var(--signal);padding:13px 21px;
+  }
+  .cta.alt:hover{background:rgba(245,166,35,.08);filter:none}
 
   /* context grid */
   .grid{
@@ -149,13 +155,19 @@
       <h1>Everything that<br><span class="l2">knocks gets logged.</span></h1>
       <div class="rule" aria-hidden="true"></div>
       <p class="lede">A Dionaea honeypot exposed on the open internet. Every scan, probe, and brute-force attempt against it is <b>captured, enriched, and mapped to MITRE ATT&amp;CK</b>, then published as a daily report.</p>
-      <a class="cta" href="daily-report.html">
-        <span>View the latest report</span><span class="arw" aria-hidden="true">&rarr;</span>
-      </a>
-      <!-- MALWARE-METRIC:START -->
-      <p class="lede" style="margin-top:14px;font-size:.95rem">Captured payloads: <a href="malware.html"><b>2 malware samples</b> (2 confirmed malicious)</a> &mdash; hashes, AV ratios, delivery vectors, IOCs.</p>
-      <!-- MALWARE-METRIC:END -->
-      <p class="lede" style="margin-top:14px;font-size:.95rem">Also on this sensor network: a <a href="spamtrap.html">spamtrap email threat intel feed</a>, tracking sender families, newly registered domains, and source IP reputation.</p>
+      <div class="cta-row">
+        <a class="cta" href="daily-report.html">
+          <span>Honeypot report</span><span class="arw" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="cta alt" href="spamtrap.html">
+          <span>Spamtrap intel</span><span class="arw" aria-hidden="true">&rarr;</span>
+        </a>
+        <!-- MALWARE-METRIC:START -->
+        <a class="cta alt" href="malware.html">
+          <span>Captured malware (2)</span><span class="arw" aria-hidden="true">&rarr;</span>
+        </a>
+        <!-- MALWARE-METRIC:END -->
+      </div>
     </div>
   </header>
 

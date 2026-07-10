@@ -50,7 +50,7 @@
   ],
   "samples": {
     "8a4e9f688c6d0effd0fa17461352ed3e": {
-      "family": "",
+      "family": "trojan.barys/dloader",
       "file_type": "dll",
       "tags": "dll,OpenCTI.BR,Sandboxed",
       "first_seen": "2022-07-20",
@@ -58,7 +58,7 @@
       "av_total": 76
     },
     "beb68e9c7ef18f421df8230c032fe02a": {
-      "family": "",
+      "family": "trojan.midie/zombieboy",
       "file_type": "dll",
       "tags": "",
       "first_seen": "2023-03-24",

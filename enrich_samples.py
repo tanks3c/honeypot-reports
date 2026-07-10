@@ -166,10 +166,13 @@ def init_cache():
         mb_ts INTEGER,
         av_malicious INTEGER,
         av_total INTEGER,
-        vt_ts INTEGER
+        vt_ts INTEGER,
+        vt_label TEXT
     )""")
     # Migration path for any older single-ts schema, mirroring enrich_ips.py.
     cols = {row[1] for row in con.execute("PRAGMA table_info(samples)").fetchall()}
+    if "vt_label" not in cols:
+        con.execute("ALTER TABLE samples ADD COLUMN vt_label TEXT")
     if "ts" in cols and "mb_ts" not in cols:
         con.execute("ALTER TABLE samples ADD COLUMN mb_ts INTEGER")
         con.execute("ALTER TABLE samples ADD COLUMN vt_ts INTEGER")
@@ -181,7 +184,8 @@ def init_cache():
 def _row(con, md5):
     return con.execute(
         "SELECT sha256, family, file_type, tags, first_seen, mb_ts, "
-        "av_malicious, av_total, vt_ts FROM samples WHERE md5=?", (md5,)).fetchone()
+        "av_malicious, av_total, vt_ts, vt_label FROM samples WHERE md5=?",
+        (md5,)).fetchone()
 
 
 def cache_get_mb(con, md5):
@@ -195,7 +199,9 @@ def cache_get_mb(con, md5):
 def cache_get_vt(con, md5):
     r = _row(con, md5)
     if r and r[8] is not None and (time.time() - r[8]) < VT_TTL:
-        return {"av_malicious": r[6], "av_total": r[7]}
+        if r[9] is None:
+            return None  # pre-vt_label cache row: refetch once to backfill
+        return {"av_malicious": r[6], "av_total": r[7], "vt_label": r[9]}
     return None
 
 
@@ -214,12 +220,14 @@ def cache_put_mb(con, md5, f):
 
 def cache_put_vt(con, md5, f):
     con.execute("""
-        INSERT INTO samples (md5, av_malicious, av_total, vt_ts)
-        VALUES (?,?,?,?)
+        INSERT INTO samples (md5, av_malicious, av_total, vt_ts, vt_label)
+        VALUES (?,?,?,?,?)
         ON CONFLICT(md5) DO UPDATE SET
             av_malicious=excluded.av_malicious,
-            av_total=excluded.av_total, vt_ts=excluded.vt_ts
-    """, (md5, f.get("av_malicious"), f.get("av_total"), int(time.time())))
+            av_total=excluded.av_total, vt_ts=excluded.vt_ts,
+            vt_label=excluded.vt_label
+    """, (md5, f.get("av_malicious"), f.get("av_total"), int(time.time()),
+          f.get("vt_label") or ""))
     con.commit()
 
 
@@ -329,12 +337,15 @@ def query_virustotal(md5: str):
     if r.status_code == 404:
         return None
     r.raise_for_status()
-    stats = (r.json().get("data", {}).get("attributes", {})
-             .get("last_analysis_stats", {}))
+    attrs = r.json().get("data", {}).get("attributes", {})
+    stats = attrs.get("last_analysis_stats", {})
     if not stats:
         return None
     total = sum(v for v in stats.values() if isinstance(v, int))
-    return {"av_malicious": stats.get("malicious", 0), "av_total": total}
+    label = (attrs.get("popular_threat_classification") or {}).get(
+        "suggested_threat_label") or ""
+    return {"av_malicious": stats.get("malicious", 0), "av_total": total,
+            "vt_label": label}
 
 
 def enrich(con, md5):
@@ -384,6 +395,8 @@ def enrich(con, md5):
         except Exception as e:
             print(f"    [warn] virustotal error for {md5}: {e}")
 
+    if not rec.get("family") and rec.get("vt_label"):
+        rec["family"] = rec["vt_label"]  # MB unattributed; use VT's label
     return rec, mb_lim, vt_lim
 
 
@@ -462,7 +475,7 @@ def embed_into_captures(con, path, hashes):
         r = _row(con, md5)
         if not r:
             continue
-        samples[md5] = {"family": r[1] or "", "file_type": r[2] or "",
+        samples[md5] = {"family": r[1] or r[9] or "", "file_type": r[2] or "",
                         "tags": r[3] or "", "first_seen": r[4] or "",
                         "av_malicious": r[6], "av_total": r[7]}
     doc["samples"] = samples
