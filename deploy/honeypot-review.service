@@ -1,0 +1,13 @@
+[Unit]
+Description=Honeypot malware sample review console (loopback web UI)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/honeypot-reports
+ExecStart=/usr/bin/python3 %h/projects/honeypot-reports/review_server.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
