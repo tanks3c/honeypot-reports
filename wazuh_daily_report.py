@@ -1222,6 +1222,17 @@ def main():
                              "indexer (which carries no download events).")
     args = parser.parse_args()
 
+    # Default to the repo's pipeline-committed captures file so the analysis
+    # box cron needs no flag change: homebase commits captures_latest.json,
+    # the box git-pulls it, and the report picks it up automatically.
+    if args.captures_json is None:
+        default_captures = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "captures_latest.json")
+        if os.path.exists(default_captures):
+            args.captures_json = default_captures
+            print(f"[*] Using pipeline captures: {default_captures}")
+
     INDEXER_URL   = args.url
     INDEX_PATTERN = args.index
 
