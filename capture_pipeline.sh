@@ -24,6 +24,10 @@ fi
 python3 enrich_samples.py --captures-json "$OUT" --embed \
     || echo "[pipeline] enrichment degraded (keys/rate limit); captures still published"
 
+# Regenerate the public malware page + index metric tile from the captures.
+python3 malware_page.py \
+    || echo "[pipeline] malware page render failed; captures still published"
+
 # Publish only when the captures/enrichment actually changed. The JSON's top
 # level `generated` timestamp bumps every run, so a raw `git diff` would commit
 # every cycle; compare a content signature over captures+samples instead, and
@@ -44,11 +48,11 @@ print("yes" if (old is None or sig(old) != sig(new)) else "no")
 PY
 )
 if [ "$CHANGED" = "yes" ]; then
-    git add "$OUT"
+    git add "$OUT" docs/malware.html docs/index.html
     git commit -q -m "Automated capture update $(date -u +%FT%TZ)" || exit 0
     git push -q || echo "[pipeline] git push failed (credential helper?); commit is local"
     echo "[pipeline] published capture update"
 else
-    git checkout -- "$OUT" 2>/dev/null   # drop timestamp-only churn
+    git checkout -- "$OUT" docs/malware.html docs/index.html 2>/dev/null   # drop timestamp-only churn
     echo "[pipeline] no capture change"
 fi

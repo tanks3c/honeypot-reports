@@ -1086,7 +1086,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
 
 <!-- MALWARE CAPTURED -->
 <div class="card" style="margin-bottom:1.5rem">
-  <h2>Malware captured ({capture_count})</h2>
+  <h2>Malware captured ({capture_count}) <a href="malware.html" style="font-size:11px;font-weight:400">full sample analysis &rarr;</a></h2>
   <table>
     <tr><th>Time (UTC)</th><th>Src IP</th><th>Protocol</th><th>URL (defanged)</th><th>MD5</th><th>Family</th><th>File type</th><th>AV</th></tr>
     {capture_rows}
