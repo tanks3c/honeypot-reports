@@ -60,7 +60,8 @@ VCOLOR = {"malicious": "#ff6b6b", "suspicious": "#f5a623",
 
 def vtip(v):
     """Plain-text audit trail for the hover tooltip: the rule, the
-    confidence math, and every checkable piece of evidence."""
+    confidence math, every checkable piece of evidence, and the engine's
+    cross-sensor sightings history when the ledger knows this IP."""
     r = v.get("rationale") or {}
     lines = [r.get("rule", ""), ""]
     for e in r.get("evidence", []):
@@ -69,6 +70,17 @@ def vtip(v):
         lines.append(f"- {detail}" + (f" [{ref}]" if ref else ""))
     if r.get("confidence_basis"):
         lines += ["", f"confidence = {r['confidence_basis']}"]
+    sg = v.get("sightings") or {}
+    if sg.get("first_seen"):
+        hits = sg.get("total_hits")
+        line = (f"first seen ever {sg['first_seen']} "
+                f"(all sensors, ledger since 2026-07-08)")
+        if sg.get("days_seen"):
+            line += (f"; {hits if hits is not None else '?'} hits over "
+                     f"{sg['days_seen']} day(s)")
+        if sg.get("sensors"):
+            line += f"; sensors: {', '.join(sg['sensors'])}"
+        lines += ["", line]
     return "\n".join(lines).strip()
 
 

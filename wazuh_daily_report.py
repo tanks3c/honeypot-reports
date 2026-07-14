@@ -441,7 +441,9 @@ def load_sample_enrichment(db_path: str, hashes) -> dict:
 
 # ---------------------------------------------------------------------------
 # IP reputation enrichment (reads the existing cache only, makes no API
-# calls itself). Cache is built/refreshed separately by enrich_ips.py.
+# calls itself). The cache is legacy: enrich_ips.py no longer refreshes it
+# (the central intel-enrich engine owns enrichment), so these rows are a
+# fallback for IPs the central verdicts do not cover.
 # Schema: ip, abuse_score, abuse_reports, country, isp,
 #         gn_classification, gn_name, ts
 # ---------------------------------------------------------------------------
@@ -520,8 +522,12 @@ def overlay_verdicts(enrichment, ips) -> None:
     """
     Overlay central verdicts (enrichment/verdicts.json on the S3 bus,
     written by the homebase intel-enrich engine) onto the local cache
-    data. Fully best-effort: no bucket config, no boto3/aws-cli, or no
-    object yet means the report simply renders from ip_cache.db alone.
+    data. The central engine is the sole enrichment source now, so its
+    values win over ip_cache.db rows wherever both exist; the cache is
+    only the fallback for IPs the engine has not seen. Fully best-effort:
+    if S3 is unreachable we fall back to verdicts_cache.json (the local
+    copy enrich_ips.py saves after each upload), and if that is also
+    missing the report simply renders from ip_cache.db alone.
     """
     from pathlib import Path as _Path
     bucket = os.environ.get("ENRICH_BUCKET")
@@ -531,22 +537,32 @@ def overlay_verdicts(enrichment, ips) -> None:
             for line in env.read_text().splitlines():
                 if line.startswith("ENRICH_BUCKET="):
                     bucket = line.split("=", 1)[1].strip()
-    if not bucket:
-        return
-    try:
+    verdicts = None
+    if bucket:
         try:
-            import boto3
-            body = boto3.client("s3").get_object(
-                Bucket=bucket, Key="enrichment/verdicts.json")["Body"].read()
-        except ImportError:
-            import subprocess
-            body = subprocess.run(
-                ["aws", "s3", "cp",
-                 f"s3://{bucket}/enrichment/verdicts.json", "-"],
-                capture_output=True, check=True).stdout
-        verdicts = json.loads(body).get("ips", {})
-    except Exception as exc:
-        print(f"[WARN] central verdicts unavailable: {exc}", file=sys.stderr)
+            try:
+                import boto3
+                body = boto3.client("s3").get_object(
+                    Bucket=bucket, Key="enrichment/verdicts.json")["Body"].read()
+            except ImportError:
+                import subprocess
+                body = subprocess.run(
+                    ["aws", "s3", "cp",
+                     f"s3://{bucket}/enrichment/verdicts.json", "-"],
+                    capture_output=True, check=True).stdout
+            verdicts = json.loads(body).get("ips", {})
+        except Exception as exc:
+            print(f"[WARN] central verdicts unavailable: {exc}", file=sys.stderr)
+    if verdicts is None:
+        local = _Path(__file__).parent / "verdicts_cache.json"
+        if local.exists():
+            try:
+                verdicts = json.loads(local.read_text()).get("ips", {})
+                print(f"[*] using local verdicts_cache.json", file=sys.stderr)
+            except Exception as exc:
+                print(f"[WARN] verdicts_cache.json unreadable: {exc}",
+                      file=sys.stderr)
+    if verdicts is None:
         return
     n = 0
     for ip in ips:
@@ -557,16 +573,30 @@ def overlay_verdicts(enrichment, ips) -> None:
                                        "gn_classification": "unknown",
                                        "gn_name": ""})
         f = v.get("facts", {})
+        rep = v.get("reputation") or {}
+        gn = f.get("gn") or {}
         e["verdict"] = v.get("verdict")
         e["confidence"] = v.get("confidence")
         e["rationale"] = v.get("rationale") or {}
         e["klass"] = f.get("class")
         e["open_ports"] = f.get("open_ports") or []
         e["vulns"] = f.get("vulns") or []
-        if f.get("asn") and not e.get("asn"):
+        # Central values win; ip_cache.db only backfills IPs with no verdict.
+        if f.get("asn"):
             e["asn"], e["org"] = f["asn"], f.get("org")
-        if f.get("country") and not e.get("country"):
+        if f.get("country"):
             e["country"] = f["country"]
+        if gn.get("classification"):
+            e["gn_classification"] = gn["classification"]
+        if gn.get("name") or rep.get("gn_name"):
+            e["gn_name"] = gn.get("name") or rep.get("gn_name")
+        if rep.get("abuse_score") is not None:
+            e["abuse_score"] = rep["abuse_score"]
+        srcs = rep.get("sources") or []
+        if srcs:
+            e["known_bad"] = 1
+            e["bad_sources"] = ",".join(sorted(set(srcs)))
+        e["sightings"] = v.get("sightings") or None
         n += 1
     print(f"[+] central verdicts overlaid on {n} IPs")
 
@@ -637,11 +667,24 @@ function renderDrill() {
   let out = '';
   for (let i = 0; i < f.length; i++) {
     const r = f[i];
+    // Within-window first-seen, plus the central engine's cross-sensor
+    // history ("ever" line) when the sightings ledger knows this IP.
+    let firstCell = r.first;
+    if (r.hist_first) {
+      let tip = 'first seen ever (all sensors, ledger since 2026-07-08)';
+      if (r.hist_days) {
+        tip += '; ' + (r.hist_hits == null ? '?' : r.hist_hits)
+             + ' hits over ' + r.hist_days + ' day(s)';
+      }
+      if (r.hist_sensors) tip += '; sensors: ' + r.hist_sensors;
+      firstCell += '<div style="font-size:10px;color:#5e7385;cursor:help" title="'
+        + tip + '">ever: ' + r.hist_first + '</div>';
+    }
     out += '<tr>'
       + '<td style="font-family:monospace;font-size:12px">' + r.ip + '</td>'
       + '<td style="text-align:right;font-weight:600;font-size:12px">' + r.hits + '</td>'
       + '<td style="font-size:12px;color:#93a7b8">' + r.proto + '</td>'
-      + '<td style="font-size:11px;color:#93a7b8;font-family:monospace">' + r.first + '</td>'
+      + '<td style="font-size:11px;color:#93a7b8;font-family:monospace">' + firstCell + '</td>'
       + '<td style="font-size:11px;color:#93a7b8;font-family:monospace">' + r.last + '</td>'
       + '<td><span class="' + badge[r.risk] + '">' + r.risk + '</span></td>'
       + '<td style="font-size:11px;color:#93a7b8;text-align:center">' + r.country + '</td>'
@@ -813,6 +856,17 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
             tip_lines.append(f"confidence = {rat['confidence_basis']}")
         if ports:
             tip_lines.append(f"open ports: {ports}")
+        sg = rep.get("sightings") or {}
+        if sg.get("first_seen"):
+            hits = sg.get("total_hits")
+            line = (f"first seen ever {sg['first_seen']} "
+                    f"(all sensors, ledger since 2026-07-08)")
+            if sg.get("days_seen"):
+                line += (f"; {hits if hits is not None else '?'} hits over "
+                         f"{sg['days_seen']} day(s)")
+            if sg.get("sensors"):
+                line += f"; sensors: {', '.join(sg['sensors'])}"
+            tip_lines.append(line)
         # NOTE: build_html uses a local var named `html`, which shadows the
         # html module here, so escape manually rather than html.escape().
         vd_tip = ("\n".join(l for l in tip_lines if l)
@@ -873,6 +927,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
         last  = data["ip_last_seen"].get(ip)
         risk  = "high" if count >= 50 else ("med" if count >= 10 else "low")
         rep = enrichment.get(ip, {})
+        sg = rep.get("sightings") or {}
         return {
             "ip":    ip,
             "hits":  count,
@@ -885,6 +940,12 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
             "gn":      rep.get("gn_classification", "-"),
             "known_bad": rep.get("known_bad", 0),
             "asn":     f"AS{rep.get('asn')}" if rep.get("asn") else "-",
+            # Authoritative cross-sensor history from the central engine's
+            # sightings ledger; distinct from the within-window `first`.
+            "hist_first":   sg.get("first_seen") or "",
+            "hist_hits":    sg.get("total_hits"),
+            "hist_days":    sg.get("days_seen"),
+            "hist_sensors": ", ".join(sg.get("sensors") or []),
         }
 
     unique_records   = [_ip_record(ip, c) for ip, c in ip_counts.most_common()]

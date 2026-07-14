@@ -22,12 +22,18 @@ Internet  ->  Dionaea honeypot (AWS EC2)
                         OpenSearch Dashboards (DQL hunting)
                                   |
                                   v
-                        enrich_ips.py  ->  enriched_YYYYMMDD.csv
+                        enrich_ips.py  ->  S3 enrichment bus
+                                  |             ^        |
+                                  |   wazuh-ips.json   verdicts.json
+                                  |             |        v
+                                  |     central intel-enrich engine
+                                  v
+                        wazuh_daily_report.py (renders verdicts)
 ```
 
 Dionaea writes connection data two ways: directly to a sqlite database at the moment of connection, and to a JSON log that the Wazuh agent tails. The sqlite database is treated as ground truth. The Wazuh and OpenSearch path is the SIEM view. Comparing the two is part of the process, not an afterthought.
 
-The enrichment pipeline runs on the analysis box. It pulls unique source IPs from OpenSearch and attaches threat intel to each one.
+IP enrichment is a one-engine architecture. A central intel-enrich engine (separate host, separate repo) owns every reputation lookup: AbuseIPDB, GreyNoise, bulk feeds, DNSBLs, ASN and geo. This repo only exchanges data with it over an S3 bus: `enrich_ips.py` uploads the day's attacker IPs, the engine publishes multi-source verdicts with provenance and confidence for every IP seen fleet-wide in the last 30 days, and the reports render those verdicts.
 
 ## Methodology
 
@@ -41,46 +47,42 @@ Each report works the same seven steps. This keeps the analysis disciplined and 
 6. Note detection gaps: confirm whether the expected rule fired and why or why not.
 7. Write a BLUF and a recommendation a SOC can act on.
 
-Step 3 is automated by the enrichment pipeline. It produces a dated CSV of AbuseIPDB and GreyNoise results that each report draws from.
+Step 3 is automated by the enrichment pipeline: the central engine's verdicts (multi-source corroboration, provenance, confidence) land in the report directly, so the manual part is the assessment, not the lookups.
 
 ## Enrichment Pipeline
 
-`enrich_ips.py` automates source IP enrichment so every report starts from consistent, pre-collected threat intel instead of manual lookups.
+`enrich_ips.py` is the collector half of the one-engine architecture. It no longer calls AbuseIPDB or GreyNoise itself; the central intel-enrich engine owns all reputation sources, rate limits, and caching. This script only moves data across the S3 bus.
 
 ### What it does
 
-1. Query OpenSearch for unique source IPs over the last 24 hours.
-2. Check a local SQLite cache before any API call.
-3. On cache miss, query AbuseIPDB and GreyNoise.
-4. Write results to cache with a 24 hour TTL.
-5. Flatten all results to `enriched_YYYYMMDD.csv`.
+1. Query OpenSearch for unique source IPs over the last 24 hours, with per-IP hit count and first/last timestamp for the window.
+2. Upload `{date, ips, stats}` to `s3://$ENRICH_BUCKET/enrichment/wazuh-ips.json` so the engine knows what to enrich.
+3. Download the engine's `enrichment/verdicts.json` to `verdicts_cache.json` in the repo root. That local copy feeds the page generators that make no network calls (`malware_page.py`) and is the report's fallback when S3 is unreachable. It is gitignored and never committed.
 
-### Fields added
+### What the engine returns
 
-| Source | Field added | Purpose |
-|---|---|---|
-| AbuseIPDB | abuse score, report count, country, ISP | Reputation and abuse history |
-| GreyNoise | classification, actor name | Mass scanner vs targeted threat |
+`verdicts.json` covers every IP seen across all sensors in the last 30 days, so lookups rarely miss. Per IP: verdict (malicious / suspicious / benign-scanner / no-adverse-data), confidence, the rule and evidence that produced it, facts (class, open ports, vulns, ASN, geo, GreyNoise), reputation sources, and a sightings ledger (first seen ever, total hits, days seen, sensors).
+
+The legacy `ip_cache.db` stays on disk as a read-only fallback for IPs the central verdicts do not cover. Nothing in this repo writes to it anymore.
 
 ### Setup
 
 ```
 python3 -m venv .venv
 source .venv/bin/activate
-pip install requests opensearch-py
+pip install opensearch-py boto3
 ```
 
 Create a `.env` file in the repo root. It is gitignored and never committed.
 
 ```
-ABUSEIPDB_KEY=your_key
-GREYNOISE_KEY=your_key
 OPENSEARCH_URL=https://localhost:9200
 OPENSEARCH_USER=admin
 OPENSEARCH_PASS=your_pass
+ENRICH_BUCKET=your_bucket
 ```
 
-The script auto-loads `.env` on every run.
+The script auto-loads `.env` on every run. `boto3` is optional; without it the script shells out to the aws CLI.
 
 ### Run
 
@@ -90,7 +92,7 @@ The script auto-loads `.env` on every run.
 
 ### Schedule
 
-Daily cron on the analysis box:
+Daily cron on the analysis box, before the report so the report renders fresh verdicts:
 
 ```
 0 6 * * * cd /home/ssm-user/honeypot-reports && .venv/bin/python enrich_ips.py >> cron.log 2>&1
@@ -98,9 +100,8 @@ Daily cron on the analysis box:
 
 ### Known limits
 
-- GreyNoise community tier caps near 50 lookups per day. Excess returns HTTP 429. Gaps self-heal on the next day's run via the cache.
-- AbuseIPDB free tier allows 1000 lookups per day, enough for current volume.
-- The script throttles 1.5 seconds per uncached IP to stay under rate limits.
+- The verdicts this script downloads are only as fresh as the central engine's last run; the report shows whatever the engine last published.
+- An IP first seen today may not be in `verdicts.json` until the engine's next cycle picks up the uploaded list. It renders from the legacy cache or as `-` until then.
 - The analysis box must be running at the scheduled time for cron to fire.
 
 ### Configuration
@@ -228,7 +229,7 @@ host that uses an instance role instead of a named profile, set
 | SIEM | Wazuh |
 | Search and dashboards | OpenSearch Dashboards (DQL) |
 | Raw data analysis | sqlite3, Python, pandas |
-| IP enrichment | enrich_ips.py (AbuseIPDB, GreyNoise), IPinfo, APNIC WHOIS |
+| IP enrichment | central intel-enrich engine via S3 bus (enrich_ips.py collects and uploads) |
 | Sample enrichment | enrich_samples.py (MalwareBazaar, VirusTotal) |
 | Cache | SQLite |
 | Framework | MITRE ATT&CK |
