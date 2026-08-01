@@ -1,8 +1,30 @@
 {
-  "generated": "2026-07-31T10:37:57.430181+00:00",
+  "generated": "2026-08-01T10:01:57.072857+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-01T09:32:04.879912+00:00",
+      "src_ip": "87.103.173.129",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "6e72ad805b4322612b9c9c7673a45635",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-08-01T06:34:44.065026+00:00",
+      "src_ip": "103.165.127.196",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "4913bef3153a460ba000e20dfcfc6bd2",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-07-08T22:19:19.487137+00:00",
       "src_ip": "211.140.151.13",
@@ -49,6 +71,22 @@
     }
   ],
   "samples": {
+    "4913bef3153a460ba000e20dfcfc6bd2": {
+      "family": "ransomware.wanna/wannacry",
+      "file_type": "",
+      "tags": "",
+      "first_seen": "",
+      "av_malicious": 65,
+      "av_total": 75
+    },
+    "6e72ad805b4322612b9c9c7673a45635": {
+      "family": "WannaCry",
+      "file_type": "dll",
+      "tags": "dll,WannaCry",
+      "first_seen": "2022-12-26",
+      "av_malicious": 61,
+      "av_total": 75
+    },
     "8a4e9f688c6d0effd0fa17461352ed3e": {
       "family": "trojan.barys/dloader",
       "file_type": "dll",
