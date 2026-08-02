@@ -136,5 +136,25 @@
     "notes": "SMB/445 inline drop (no URL). Mapped T1190 (internet-facing service exploited, initial access) ",
     "reviewed_on": "2026-07-10T14:40:55+00:00",
     "status": "verified"
+  },
+  "cd99e5e4f44621978faf8df0e01d2d2b": {
+    "auto": {
+      "av_malicious": 48,
+      "av_total": 74,
+      "family": "WannaCry",
+      "file_type": "dll",
+      "first_seen": "2022-12-18",
+      "tags": "dll,wannacry"
+    },
+    "family": "WannaCry",
+    "file_type": "dll",
+    "first_flagged": "2026-08-02T22:02:41+00:00",
+    "mitre": [
+      "T1190",
+      "T1105"
+    ],
+    "notes": "AUTO: SMB/445 inline drop (no URL). Mapped T1190 (internet-facing service exploited, initial access) + T1105 (payload transfer). T1210 applies only as worm propagation context. Verify family/mapping and edit as needed.",
+    "reviewed_on": null,
+    "status": "pending_review"
   }
 }

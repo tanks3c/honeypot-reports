@@ -1,8 +1,19 @@
 {
-  "generated": "2026-08-02T16:02:13.368783+00:00",
+  "generated": "2026-08-02T22:02:05.408881+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-02T18:17:59.817489+00:00",
+      "src_ip": "213.14.29.250",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "cd99e5e4f44621978faf8df0e01d2d2b",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-02T11:46:04.455561+00:00",
       "src_ip": "14.187.47.117",
@@ -159,6 +170,14 @@
       "first_seen": "2023-03-24",
       "av_malicious": 63,
       "av_total": 75
+    },
+    "cd99e5e4f44621978faf8df0e01d2d2b": {
+      "family": "WannaCry",
+      "file_type": "dll",
+      "tags": "dll,wannacry",
+      "first_seen": "2022-12-18",
+      "av_malicious": 48,
+      "av_total": 74
     }
   }
 }
