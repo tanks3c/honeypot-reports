@@ -1,8 +1,52 @@
 {
-  "generated": "2026-07-12T05:01:40.401724+00:00",
+  "generated": "2026-08-02T04:02:41.677070+00:00",
   "source": "dionaea-sqlite",
-  "instance_id": "i-0b0b4309b4b821173",
+  "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-02T00:05:52.217338+00:00",
+      "src_ip": "14.164.39.195",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "723b91c399cba7396b7daff52b2309da",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-08-01T17:43:51.759150+00:00",
+      "src_ip": "102.90.117.14",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "879d69d4c18d6947f9ea5e545ac16d01",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-08-01T09:32:04.879912+00:00",
+      "src_ip": "87.103.173.129",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "6e72ad805b4322612b9c9c7673a45635",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-08-01T06:34:44.065026+00:00",
+      "src_ip": "103.165.127.196",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "4913bef3153a460ba000e20dfcfc6bd2",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-07-08T22:19:19.487137+00:00",
       "src_ip": "211.140.151.13",
@@ -49,21 +93,53 @@
     }
   ],
   "samples": {
+    "4913bef3153a460ba000e20dfcfc6bd2": {
+      "family": "ransomware.wanna/wannacry",
+      "file_type": "",
+      "tags": "",
+      "first_seen": "",
+      "av_malicious": 65,
+      "av_total": 75
+    },
+    "6e72ad805b4322612b9c9c7673a45635": {
+      "family": "WannaCry",
+      "file_type": "dll",
+      "tags": "dll,WannaCry",
+      "first_seen": "2022-12-26",
+      "av_malicious": 61,
+      "av_total": 75
+    },
+    "723b91c399cba7396b7daff52b2309da": {
+      "family": "trojan.wannacry/wanna",
+      "file_type": "",
+      "tags": "",
+      "first_seen": "",
+      "av_malicious": 68,
+      "av_total": 76
+    },
+    "879d69d4c18d6947f9ea5e545ac16d01": {
+      "family": "WannaCry",
+      "file_type": "dll",
+      "tags": "dll,exe,WannaCry",
+      "first_seen": "2025-01-14",
+      "av_malicious": 67,
+      "av_total": 75
+    },
     "8a4e9f688c6d0effd0fa17461352ed3e": {
       "family": "trojan.barys/dloader",
       "file_type": "dll",
       "tags": "dll,OpenCTI.BR,Sandboxed",
       "first_seen": "2022-07-20",
-      "av_malicious": 60,
-      "av_total": 76
+      "av_malicious": 61,
+      "av_total": 75
     },
     "beb68e9c7ef18f421df8230c032fe02a": {
       "family": "trojan.midie/zombieboy",
       "file_type": "dll",
       "tags": "",
       "first_seen": "2023-03-24",
-      "av_malicious": 62,
-      "av_total": 74
+      "av_malicious": 63,
+      "av_total": 75
     }
   }
 }
