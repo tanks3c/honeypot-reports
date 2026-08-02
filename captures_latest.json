@@ -1,8 +1,19 @@
 {
-  "generated": "2026-08-02T04:02:41.677070+00:00",
+  "generated": "2026-08-02T16:02:13.368783+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-02T11:46:04.455561+00:00",
+      "src_ip": "14.187.47.117",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "ae12bb54af31227017feffd9598a6f5e",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-02T00:05:52.217338+00:00",
       "src_ip": "14.164.39.195",
@@ -98,7 +109,7 @@
       "file_type": "",
       "tags": "",
       "first_seen": "",
-      "av_malicious": 65,
+      "av_malicious": 64,
       "av_total": 75
     },
     "6e72ad805b4322612b9c9c7673a45635": {
@@ -132,6 +143,14 @@
       "first_seen": "2022-07-20",
       "av_malicious": 61,
       "av_total": 75
+    },
+    "ae12bb54af31227017feffd9598a6f5e": {
+      "family": "WannaCry",
+      "file_type": "dll",
+      "tags": "dll,Wannacry",
+      "first_seen": "2022-12-22",
+      "av_malicious": 57,
+      "av_total": 74
     },
     "beb68e9c7ef18f421df8230c032fe02a": {
       "family": "trojan.midie/zombieboy",
