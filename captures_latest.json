@@ -1,8 +1,19 @@
 {
-  "generated": "2026-08-02T22:02:05.408881+00:00",
+  "generated": "2026-08-03T22:00:30.873919+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-03T15:57:00.964218+00:00",
+      "src_ip": "113.161.213.147",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "996c2b2ca30180129c69352a3a3515e4",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-02T18:17:59.817489+00:00",
       "src_ip": "213.14.29.250",
@@ -155,6 +166,14 @@
       "av_malicious": 61,
       "av_total": 75
     },
+    "996c2b2ca30180129c69352a3a3515e4": {
+      "family": "WannaCry",
+      "file_type": "dll",
+      "tags": "dll,OpenCTI.BR,Sandboxed,WannaCry",
+      "first_seen": "2022-07-22",
+      "av_malicious": 64,
+      "av_total": 74
+    },
     "ae12bb54af31227017feffd9598a6f5e": {
       "family": "WannaCry",
       "file_type": "dll",
@@ -168,7 +187,7 @@
       "file_type": "dll",
       "tags": "",
       "first_seen": "2023-03-24",
-      "av_malicious": 63,
+      "av_malicious": 62,
       "av_total": 75
     },
     "cd99e5e4f44621978faf8df0e01d2d2b": {
