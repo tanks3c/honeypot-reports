@@ -1,8 +1,19 @@
 {
-  "generated": "2026-08-03T22:00:30.873919+00:00",
+  "generated": "2026-08-04T04:00:59.381840+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-04T03:16:17.636741+00:00",
+      "src_ip": "103.171.12.42",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "f1864ad4bd7a190deb899a68a638f582",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-03T15:57:00.964218+00:00",
       "src_ip": "113.161.213.147",
@@ -197,6 +208,14 @@
       "first_seen": "2022-12-18",
       "av_malicious": 48,
       "av_total": 74
+    },
+    "f1864ad4bd7a190deb899a68a638f582": {
+      "family": "trojan.wanna/cztf",
+      "file_type": "",
+      "tags": "",
+      "first_seen": "",
+      "av_malicious": 63,
+      "av_total": 76
     }
   }
 }
