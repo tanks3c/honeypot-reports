@@ -592,10 +592,24 @@ def overlay_verdicts(enrichment, ips) -> None:
             e["gn_name"] = gn.get("name") or rep.get("gn_name")
         if rep.get("abuse_score") is not None:
             e["abuse_score"] = rep["abuse_score"]
+        # intel-enrich bc32fd9 changed reputation.sources from a list of
+        # source-name strings to a list of evidence dicts
+        # ({"source": ..., "weight": ..., "malware": ...}). Accept both shapes;
+        # anything else degrades to str() rather than killing the run.
         srcs = rep.get("sources") or []
-        if srcs:
+        names = set()
+        for s in srcs:
+            if isinstance(s, dict):
+                name = s.get("source")
+            elif isinstance(s, str):
+                name = s
+            else:
+                name = str(s)
+            if name:
+                names.add(name)
+        if names:
             e["known_bad"] = 1
-            e["bad_sources"] = ",".join(sorted(set(srcs)))
+            e["bad_sources"] = ",".join(sorted(names))
         e["sightings"] = v.get("sightings") or None
         n += 1
     print(f"[+] central verdicts overlaid on {n} IPs")
