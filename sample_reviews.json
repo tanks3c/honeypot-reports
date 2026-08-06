@@ -98,6 +98,26 @@
     "reviewed_on": "2026-07-10T14:08:39+00:00",
     "status": "verified"
   },
+  "8a5c14aab1e2795b31b55964e4583de0": {
+    "auto": {
+      "av_malicious": 68,
+      "av_total": 76,
+      "family": "ransomware.wanna/wannacry",
+      "file_type": "",
+      "first_seen": "",
+      "tags": ""
+    },
+    "family": "ransomware.wanna/wannacry",
+    "file_type": "",
+    "first_flagged": "2026-08-06T10:02:34+00:00",
+    "mitre": [
+      "T1190",
+      "T1105"
+    ],
+    "notes": "AUTO: SMB/445 inline drop (no URL). Mapped T1190 (internet-facing service exploited, initial access) + T1105 (payload transfer). T1210 applies only as worm propagation context. Verify family/mapping and edit as needed.",
+    "reviewed_on": null,
+    "status": "pending_review"
+  },
   "8e6bfea06cb00553ee29b3822b349bd6": {
     "auto": {
       "av_malicious": 68,
