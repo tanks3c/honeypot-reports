@@ -610,6 +610,11 @@ def overlay_verdicts(enrichment, ips) -> None:
         if names:
             e["known_bad"] = 1
             e["bad_sources"] = ",".join(sorted(names))
+        # The engine's independent vote groups (verdict.py VOTE_GROUP). This is
+        # the number the verdict is actually built from; it is NOT the same as
+        # len(reputation.sources) (aggregates collapse, ipsum/otx have vote
+        # thresholds, DNSBL is evidence but not a vote). Render from this.
+        e["votes"] = v.get("votes") or []
         e["sightings"] = v.get("sightings") or None
         n += 1
     print(f"[+] central verdicts overlaid on {n} IPs")
@@ -840,34 +845,50 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
           <td style="width:70px;font-size:11px;color:#5e7385;padding-left:8px">{mitre}</td>
         </tr>"""
 
-    # Top IP table rows
-    ip_rows = ""
-    for ip, count in top_ips:
-        top_proto = data["ip_protocols"][ip].most_common(1)
-        proto_str = PROTOCOL_MAP.get(top_proto[0][0], (top_proto[0][0].upper(), "", "#93A7B8"))[0] if top_proto else "?"
-        flag = "🔴" if count >= 50 else ("🟡" if count >= 10 else "🟢")
-        rep = enrichment.get(ip, {})
-        abuse = rep.get("abuse_score")
-        abuse_str = f"{abuse}%" if abuse is not None else "-"
-        abuse_color = "#e5484d" if (abuse or 0) >= 75 else ("#f5a623" if (abuse or 0) >= 25 else "#93a7b8")
-        country = rep.get("country") or "-"
-        gn = rep.get("gn_classification", "-")
-        gn_color = {"malicious": "#e5484d", "benign": "#7dd3c0"}.get(gn, "#93a7b8")
-        kb = rep.get("known_bad")
-        kb_cell = (f'<span style="color:#ff6b6b;font-weight:600" title="{rep.get("bad_sources","")}">BAD</span>'
-                   if kb else '<span style="color:#5e7385">-</span>')
-        asn = rep.get("asn")
-        asn_cell = f"AS{asn}" if asn else "-"
+    # ---- Assessment column ------------------------------------------------
+    # One synthesized verdict per IP instead of four competing "is this bad"
+    # columns (verdict / BAD / Abuse% / GreyNoise). The taxonomy and the
+    # weighting are intel-enrich's (verdict.py compute(), commit bc32fd9);
+    # this only RENDERS that verdict. No second scoring system is defined
+    # here. The underlying signals are not dropped: they become the compact
+    # evidence sub-line plus the hover rationale.
+    VERDICT_STYLE = {
+        "malicious":       ("MALICIOUS",       "#e5484d"),
+        "suspicious":      ("SUSPICIOUS",      "#f5a623"),
+        "benign-scanner":  ("KNOWN SCANNER",   "#46b6c4"),
+        "no-adverse-data": ("NO ADVERSE DATA", "#7d8fa0"),
+    }
+
+    def _assessment_cell(rep):
+        """Badge + confidence + evidence sub-line + full rationale tooltip."""
         vd = rep.get("verdict")
-        vd_color = {"malicious": "#e5484d", "suspicious": "#f5a623",
-                    "benign-scanner": "#46b6c4"}.get(vd, "#5e7385")
-        ports = ",".join(str(p) for p in rep.get("open_ports", [])[:6])
-        rat = rep.get("rationale", {})
-        tip_lines = [rat.get("rule", "")]
-        for ev in rat.get("evidence", []):
-            tip_lines.append(f"- {ev.get('detail', '')}")
+        abuse = rep.get("abuse_score")
+        gn = rep.get("gn_classification") or ""
+        gn_name = rep.get("gn_name") or ""
+        rat = rep.get("rationale") or {}
+        evidence = rat.get("evidence") or []
+        src_names = [e.get("source") for e in evidence if e.get("source")]
+        if not src_names and rep.get("bad_sources"):
+            src_names = [s for s in rep["bad_sources"].split(",") if s]
+
+        # --- tooltip: the full auditable rationale, unchanged in substance ---
+        tip_lines = []
+        if rat.get("rule"):
+            tip_lines.append(rat["rule"])
+        for ev in evidence:
+            ref = ev.get("ref")
+            tip_lines.append(f"- {ev.get('detail', '')}" + (f"  [{ref}]" if ref else ""))
         if rat.get("confidence_basis"):
             tip_lines.append(f"confidence = {rat['confidence_basis']}")
+        # Raw per-source signals still readable, now as supporting detail
+        # rather than as competing top-level columns.
+        if abuse is not None:
+            tip_lines.append(f"AbuseIPDB score: {abuse}")
+        if gn:
+            tip_lines.append(f"GreyNoise: {gn}" + (f" ({gn_name})" if gn_name else ""))
+        if src_names:
+            tip_lines.append(f"listed by: {', '.join(sorted(set(src_names)))}")
+        ports = ",".join(str(p) for p in rep.get("open_ports", [])[:6])
         if ports:
             tip_lines.append(f"open ports: {ports}")
         sg = rep.get("sightings") or {}
@@ -881,14 +902,67 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
             if sg.get("sensors"):
                 line += f"; sensors: {', '.join(sg['sensors'])}"
             tip_lines.append(line)
-        # NOTE: build_html uses a local var named `html`, which shadows the
-        # html module here, so escape manually rather than html.escape().
-        vd_tip = ("\n".join(l for l in tip_lines if l)
-                  .replace("&", "&amp;").replace("<", "&lt;")
-                  .replace(">", "&gt;").replace('"', "&quot;"))
-        vd_cell = (f'<span style="color:{vd_color};font-weight:600;cursor:help" '
-                   f'title="{vd_tip}">{vd}</span>'
-                   if vd else '<span style="color:#5e7385">-</span>')
+
+        if not vd:
+            # No central verdict for this IP. Do NOT invent one from the local
+            # ip_cache.db backfill; say so plainly and show what we do have.
+            local_bits = []
+            if abuse is not None:
+                local_bits.append(f"abuse {abuse}")
+            if gn and gn != "unknown":
+                local_bits.append(f"GN {gn}")
+            tip_lines.insert(0, "no central intel-enrich verdict for this IP; "
+                                "local cache values only")
+            sub = " &middot; ".join(local_bits) or "no cached signals"
+            tip = _esc("\n".join(l for l in tip_lines if l))
+            return (f'<span style="color:#5e7385;font-weight:600;cursor:help" '
+                    f'title="{tip}">UNRATED</span>'
+                    f'<div style="font-size:10px;color:#5e7385">{sub}</div>')
+
+        label, color = VERDICT_STYLE.get(vd, (vd.upper(), "#5e7385"))
+        conf = rep.get("confidence")
+        conf_str = (f'<span style="color:#5e7385;font-weight:400"> '
+                    f'{conf}%</span>' if conf is not None else "")
+        # Evidence sub-line: lead with the corroboration the verdict is
+        # actually built from (the engine's independent vote groups), then the
+        # two raw scores. Listings that did not clear a vote threshold are
+        # shown, but labelled so they cannot be mistaken for corroboration.
+        bits = []
+        votes = rep.get("votes") or []
+        n = len(votes)
+        if n:
+            bits.append(f"{n} source{'s' if n != 1 else ''}: "
+                        f"{', '.join(votes[:3])}"
+                        + (f" +{n - 3}" if n > 3 else ""))
+        else:
+            extra = sorted(set(src_names))
+            bits.append("0 corroborating sources"
+                        + (f" ({', '.join(extra[:2])} below threshold)"
+                           if extra else ""))
+        # Only surface an AbuseIPDB score once it clears the engine's own
+        # suspicion threshold (25). A score of 1-3 is noise and reads as a
+        # competing signal next to the verdict. Full score stays in the tooltip.
+        if (abuse or 0) >= 25:
+            bits.append(f"abuse {abuse}")
+        if gn and gn != "unknown":
+            bits.append(f"GN {gn}")
+        sub = " &middot; ".join(bits) or "&nbsp;"
+        tip = _esc("\n".join(l for l in tip_lines if l))
+        return (f'<span style="color:{color};font-weight:600;cursor:help" '
+                f'title="{tip}">{label}</span>{conf_str}'
+                f'<div style="font-size:10px;color:#5e7385">{sub}</div>')
+
+    # Top IP table rows
+    ip_rows = ""
+    for ip, count in top_ips:
+        top_proto = data["ip_protocols"][ip].most_common(1)
+        proto_str = PROTOCOL_MAP.get(top_proto[0][0], (top_proto[0][0].upper(), "", "#93A7B8"))[0] if top_proto else "?"
+        flag = "🔴" if count >= 50 else ("🟡" if count >= 10 else "🟢")
+        rep = enrichment.get(ip, {})
+        country = rep.get("country") or "-"
+        asn = rep.get("asn")
+        asn_cell = f"AS{asn}" if asn else "-"
+        assessment = _assessment_cell(rep)
         # Malware flag: this IP dropped a captured sample in-window.
         ip_caps = captures_by_ip.get(ip, [])
         mal_flag = (f' <span title="{len(ip_caps)} sample(s) captured" '
@@ -900,12 +974,9 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
           <td style="text-align:center;font-size:14px">{flag}</td>
           <td style="text-align:right;font-size:12px;font-weight:600">{count}</td>
           <td style="font-size:12px;color:#93a7b8">{proto_str}</td>
-          <td style="font-size:11px">{vd_cell}</td>
-          <td style="font-size:11px;text-align:center">{kb_cell}</td>
+          <td style="font-size:11px;line-height:1.35">{assessment}</td>
           <td style="font-size:12px;color:#93a7b8;text-align:center">{country}</td>
           <td style="font-size:11px;color:#5e7385;font-family:monospace">{asn_cell}</td>
-          <td style="font-size:12px;font-weight:600;text-align:right;color:{abuse_color}">{abuse_str}</td>
-          <td style="font-size:11px;color:{gn_color}">{gn}</td>
         </tr>"""
 
     # Hourly chart (last 24 buckets)
@@ -1145,10 +1216,22 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
   <div class="card">
     <h2>Top attacker IPs</h2>
     <table>
-      <tr><th>IP</th><th>Risk</th><th>Hits</th><th>Protocol</th><th>Verdict</th><th>Bad</th><th>Country</th><th>ASN</th><th>Abuse%</th><th>GreyNoise</th></tr>
+      <tr><th>IP</th><th>Risk</th><th>Hits</th><th>Protocol</th><th>Assessment</th><th>Country</th><th>ASN</th></tr>
       {ip_rows}
     </table>
     <div style="font-size:10px;color:#5e7385;margin-top:8px">🔴 ≥50 hits &nbsp; 🟡 ≥10 hits &nbsp; 🟢 &lt;10 hits</div>
+    <div style="font-size:10px;color:#5e7385;margin-top:4px;line-height:1.5">
+      <b>Assessment</b> is one synthesized verdict per IP from the central intel-enrich engine,
+      with its confidence. The line under it lists the corroborating evidence
+      (independent source count, AbuseIPDB score, GreyNoise class). Hover the verdict for the
+      full rationale: the rule that fired, each source with a link to check it, and the
+      confidence arithmetic. <span style="color:#e5484d">MALICIOUS</span> = ThreatFox C2 or
+      ≥2 independent sources &nbsp;
+      <span style="color:#f5a623">SUSPICIOUS</span> = 1 source / AbuseIPDB ≥25 / DNSBL &nbsp;
+      <span style="color:#46b6c4">KNOWN SCANNER</span> = research scanner, not published as bad &nbsp;
+      <span style="color:#7d8fa0">NO ADVERSE DATA</span> = all feeds checked, no listings &nbsp;
+      <span style="color:#5e7385">UNRATED</span> = no central verdict yet.
+    </div>
   </div>
   <div class="card">
     <h2>Recent events (last 20)</h2>
