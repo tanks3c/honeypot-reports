@@ -1,8 +1,19 @@
 {
-  "generated": "2026-08-04T22:02:29.382050+00:00",
+  "generated": "2026-08-06T04:01:38.458084+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-06T00:17:35.767691+00:00",
+      "src_ip": "189.40.184.23",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "ae12bb54af31227017feffd9598a6f5e",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-04T17:38:10.443539+00:00",
       "src_ip": "187.136.17.102",
