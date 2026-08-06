@@ -931,7 +931,11 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
         votes = rep.get("votes") or []
         n = len(votes)
         if n:
-            bits.append(f"{n} source{'s' if n != 1 else ''}: "
+            # A research scanner hits blocklists constantly, so the scanner
+            # rule deliberately outranks its listings. Say that inline,
+            # otherwise "KNOWN SCANNER + 6 sources" reads as a contradiction.
+            lead = ("listings overridden, " if vd == "benign-scanner" else "")
+            bits.append(f"{lead}{n} source{'s' if n != 1 else ''}: "
                         f"{', '.join(votes[:3])}"
                         + (f" +{n - 3}" if n > 3 else ""))
         else:
