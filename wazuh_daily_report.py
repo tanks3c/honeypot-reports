@@ -712,6 +712,8 @@ function renderDrill() {
   const q = document.getElementById('drill-filter').value.trim().toLowerCase();
   const f = q
     ? rows.filter(function (r) {
+        // r.proto is the flattened plain-text list of every service label for
+        // this IP, kept purely so the filter still matches "https" etc.
         return (r.ip + ' ' + r.proto + ' ' + r.risk).toLowerCase().indexOf(q) !== -1;
       })
     : rows;
@@ -732,10 +734,25 @@ function renderDrill() {
       firstCell += '<div style="font-size:10px;color:#5e7385;cursor:help" title="'
         + tip + '">ever: ' + r.hist_first + '</div>';
     }
+    // Every service this IP touched, as its own tag, using the same
+    // service_key/proto_style scheme as the Recent events table. One tag per
+    // canonical service key, so httpd:80 and httpd:443 read as HTTP and HTTPS.
+    let svcCell = '';
+    const svcs = r.svcs || [];
+    for (let j = 0; j < svcs.length; j++) {
+      const s = svcs[j];
+      svcCell += '<span title="' + s.hits + ' hit(s) on ' + s.label + '" '
+        + 'style="display:inline-block;margin:1px 3px 1px 0;padding:1px 6px;'
+        + 'border-radius:3px;font-size:11px;font-weight:600;'
+        + 'background:' + s.color + '22;color:' + s.color + '">'
+        + s.label + '<span style="opacity:.65;font-weight:500"> ' + s.hits + '</span>'
+        + '</span>';
+    }
+    if (!svcCell) svcCell = '<span style="color:#5e7385">-</span>';
     out += '<tr>'
       + '<td style="font-family:monospace;font-size:12px">' + r.ip + '</td>'
       + '<td style="text-align:right;font-weight:600;font-size:12px">' + r.hits + '</td>'
-      + '<td style="font-size:12px;color:#93a7b8">' + r.proto + '</td>'
+      + '<td style="line-height:1.7">' + svcCell + '</td>'
       + '<td style="font-size:11px;color:#93a7b8;font-family:monospace">' + firstCell + '</td>'
       + '<td style="font-size:11px;color:#93a7b8;font-family:monospace">' + r.last + '</td>'
       + '<td><span class="' + badge[r.risk] + '">' + r.risk + '</span></td>'
@@ -1052,8 +1069,14 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
     scanner_count = sum(1 for c in ip_counts.values() if c >= 50)
 
     def _ip_record(ip, count):
-        tp = data["ip_protocols"][ip].most_common(1)
-        proto_str = proto_style(tp[0][0])[0] if tp else "?"
+        # Every canonical service key this IP hit, most-hit first, carrying the
+        # same label/color as the Recent events tags. The drill-down used to
+        # show only most_common(1) as flat grey text, which hid the httpd:80 vs
+        # httpd:443 split entirely (fixed 2026-08-07).
+        svcs = [
+            {"label": proto_style(k)[0], "color": proto_style(k)[2], "hits": n}
+            for k, n in data["ip_protocols"][ip].most_common()
+        ]
         first = data["ip_first_seen"].get(ip)
         last  = data["ip_last_seen"].get(ip)
         risk  = "high" if count >= 50 else ("med" if count >= 10 else "low")
@@ -1062,7 +1085,9 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
         return {
             "ip":    ip,
             "hits":  count,
-            "proto": proto_str,
+            "svcs":  svcs,
+            # Flattened labels, filter-text only. Not rendered.
+            "proto": " ".join(s["label"] for s in svcs),
             "first": first.strftime("%m-%d %H:%M") if first else "",
             "last":  last.strftime("%m-%d %H:%M") if last else "",
             "risk":  risk,
@@ -1363,7 +1388,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
           <tr>
             <th>IP</th>
             <th style="text-align:right">Hits</th>
-            <th>Top proto</th>
+            <th>Services</th>
             <th>First seen (UTC)</th>
             <th>Last seen (UTC)</th>
             <th>Risk</th>
