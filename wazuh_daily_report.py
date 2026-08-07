@@ -626,17 +626,30 @@ def overlay_verdicts(enrichment, ips) -> None:
 # Copied unchanged from the original dionaea_daily_report.py render layer.
 # ===========================================================================
 
-# Map Dionaea protocol strings to human-readable labels and MITRE techniques
+# Map canonical service keys to human-readable labels and MITRE techniques.
+# A service key is normally the raw Dionaea protocol string. Where one handler
+# serves more than one port it is "<proto>-<port>" (see SERVICE_PORT_SPLIT).
 PROTOCOL_MAP = {
-    "smbd":    ("SMB",    "T1210", "#E5484D"),
-    "mysqld":  ("MySQL",  "T1190", "#7DD3C0"),
-    "httpd":   ("HTTP",   "T1190", "#46B6C4"),
-    "ftpd":    ("FTP",    "T1190", "#F5A623"),
-    "mssqld":  ("MSSQL",  "T1190", "#A78BFA"),
-    "sipd":    ("SIP",    "T1190", "#93A7B8"),
+    "smbd":      ("SMB",    "T1210", "#E5484D"),
+    "mysqld":    ("MySQL",  "T1190", "#7DD3C0"),
+    "httpd":     ("HTTP",   "T1190", "#46B6C4"),
+    "httpd-443": ("HTTPS",  "T1190", "#2FB37A"),
+    "ftpd":      ("FTP",    "T1190", "#F5A623"),
+    "mssqld":    ("MSSQL",  "T1190", "#A78BFA"),
+    "sipd":      ("SIP",    "T1190", "#93A7B8"),
 }
 
-# Ports mapped to expected protocol (for sanity-check)
+# Dionaea's httpd handler binds BOTH 80 and 443, and connection.protocol is
+# "httpd" on either. Labelling off the protocol alone therefore tagged every
+# TLS probe as plain "HTTP" (fixed 2026-08-07). Ports listed here get their own
+# canonical service key; every other (proto, port) pair keys on the bare
+# protocol name, so this stays a narrow override, not a second taxonomy.
+SERVICE_PORT_SPLIT = {
+    "httpd": {443: "httpd-443"},
+}
+
+# Ports mapped to expected service label (sanity-check reference only; the
+# rendering path goes through service_key/proto_style, not this table).
 PORT_MAP = {
     21:   "FTP",
     80:   "HTTP",
@@ -645,6 +658,26 @@ PORT_MAP = {
     1433: "MSSQL",
     3306: "MySQL",
 }
+
+# Service keys that count as T1190 (Exploit Public-Facing Application) in the
+# ATT&CK table. Matched on the protocol half so port-split keys are included.
+T1190_PROTOCOLS = ("httpd", "ftpd", "mysqld", "mssqld")
+
+
+def service_key(proto, port) -> str:
+    """Canonical service key for one (connection.protocol, dst_port) pair."""
+    proto = proto or "unknown"
+    try:
+        port = int(port)
+    except (TypeError, ValueError):
+        return proto
+    return SERVICE_PORT_SPLIT.get(proto, {}).get(port, proto)
+
+
+def proto_style(key) -> tuple:
+    """(label, mitre, color) for a canonical service key. Unknown keys render
+    as the uppercased key in the neutral grey, same as the old inline default."""
+    return PROTOCOL_MAP.get(key, (str(key).upper(), "T1190", "#93A7B8"))
 
 # Drill-down behavior script. Plain string (NOT an f-string) so JS braces are
 # literal. Data is injected via .replace("__DRILL_DATA__", ...). Uses string
@@ -745,8 +778,12 @@ def classify_events(events: list[dict], captures: list[dict] | None = None) -> d
 
     total          = len(accepted)
     src_ip_counts  = Counter(e.get("src_ip", "unknown") for e in accepted)
+    # Keyed on the canonical service key, not the raw protocol, so httpd:80 and
+    # httpd:443 are counted (and rendered) as distinct services.
     protocol_counts = Counter(
-        e.get("connection", {}).get("protocol", "unknown") for e in accepted
+        service_key(e.get("connection", {}).get("protocol", "unknown"),
+                    e.get("dst_port", 0))
+        for e in accepted
     )
     port_counts    = Counter(e.get("dst_port", 0) for e in accepted)
 
@@ -760,12 +797,13 @@ def classify_events(events: list[dict], captures: list[dict] | None = None) -> d
     # High-frequency IPs (5+ connections = probable scanner/bot)
     high_freq_ips = {ip: c for ip, c in src_ip_counts.items() if c >= 5}
 
-    # Per-IP protocol breakdown
+    # Per-IP service breakdown (canonical service keys, port-split aware)
     ip_protocols: dict[str, Counter] = defaultdict(Counter)
     for e in accepted:
         ip = e.get("src_ip", "unknown")
-        proto = e.get("connection", {}).get("protocol", "unknown")
-        ip_protocols[ip][proto] += 1
+        key = service_key(e.get("connection", {}).get("protocol", "unknown"),
+                          e.get("dst_port", 0))
+        ip_protocols[ip][key] += 1
 
     # Per-IP first/last seen (dwell window within the lookback)
     ip_first_seen: dict[str, datetime] = {}
@@ -827,11 +865,16 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
     # Top 10 IPs
     top_ips = ip_counts.most_common(10)
 
+    # T1190 rollup. proto_counts is keyed on service keys, which may carry a
+    # "-<port>" suffix, so match on the protocol half.
+    t1190_count = sum(c for p, c in proto_counts.items()
+                      if str(p).split("-")[0] in T1190_PROTOCOLS)
+
     # Protocol bar rows
     max_proto_count = max(proto_counts.values(), default=1)
     proto_rows = ""
     for proto, count in proto_counts.most_common(8):
-        label, mitre, color = PROTOCOL_MAP.get(proto, (proto.upper(), "T1190", "#93A7B8"))
+        label, mitre, color = proto_style(proto)
         pct = round(count / max_proto_count * 100)
         proto_rows += f"""
         <tr>
@@ -960,7 +1003,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
     ip_rows = ""
     for ip, count in top_ips:
         top_proto = data["ip_protocols"][ip].most_common(1)
-        proto_str = PROTOCOL_MAP.get(top_proto[0][0], (top_proto[0][0].upper(), "", "#93A7B8"))[0] if top_proto else "?"
+        proto_str = proto_style(top_proto[0][0])[0] if top_proto else "?"
         flag = "🔴" if count >= 50 else ("🟡" if count >= 10 else "🟢")
         rep = enrichment.get(ip, {})
         country = rep.get("country") or "-"
@@ -993,11 +1036,10 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
     event_rows = ""
     for e in recent:
         ts_str = e["_ts"].strftime("%H:%M:%S")
-        proto  = e.get("connection", {}).get("protocol", "?")
-        label  = PROTOCOL_MAP.get(proto, (proto.upper(), "", "#93A7B8"))[0]
-        color  = PROTOCOL_MAP.get(proto, ("", "", "#93A7B8"))[2]
         src    = e.get("src_ip", "?")
         port   = e.get("dst_port", "?")
+        key    = service_key(e.get("connection", {}).get("protocol", "?"), port)
+        label, _, color = proto_style(key)
         event_rows += f"""
         <tr>
           <td style="font-size:11px;color:#93a7b8;font-family:monospace">{ts_str}</td>
@@ -1011,7 +1053,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
 
     def _ip_record(ip, count):
         tp = data["ip_protocols"][ip].most_common(1)
-        proto_str = (PROTOCOL_MAP.get(tp[0][0], (tp[0][0].upper(), "", "#93A7B8"))[0]) if tp else "?"
+        proto_str = proto_style(tp[0][0])[0] if tp else "?"
         first = data["ip_first_seen"].get(ip)
         last  = data["ip_last_seen"].get(ip)
         risk  = "high" if count >= 50 else ("med" if count >= 10 else "low")
@@ -1053,8 +1095,8 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
     for c in sorted(captures, key=lambda x: x["_ts"], reverse=True):
         md5 = c.get("md5", "")
         se = sample_enrichment.get(md5, {})
-        proto = c.get("protocol", "?")
-        proto_label = PROTOCOL_MAP.get(proto, (proto.upper(), "", "#93A7B8"))[0]
+        proto_label = proto_style(
+            service_key(c.get("protocol", "?"), c.get("dst_port", 0)))[0]
         url = _defang(c.get("url", ""))
         url_cell = _esc(url) if url else '<span style="color:#5e7385">-</span>'
         fam = se.get("family") or "-"
@@ -1274,8 +1316,8 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
     <tr>
       <td style="font-family:monospace;font-size:12px">T1190</td>
       <td style="font-size:12px">Exploit Public-Facing Application</td>
-      <td style="font-size:12px">HTTP, FTP, MySQL, MSSQL</td>
-      <td style="font-size:12px">{sum(c for p, c in proto_counts.items() if p in ('httpd','ftpd','mysqld','mssqld')):,}</td>
+      <td style="font-size:12px">HTTP, HTTPS, FTP, MySQL, MSSQL</td>
+      <td style="font-size:12px">{t1190_count:,}</td>
     </tr>
     <tr>
       <td style="font-family:monospace;font-size:12px">T1210</td>
