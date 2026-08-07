@@ -1,8 +1,85 @@
 {
-  "generated": "2026-08-06T10:02:12.854827+00:00",
+  "generated": "2026-08-07T13:15:55.252521+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-07T13:05:56.946861+00:00",
+      "src_ip": "14.191.61.13",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "70af99279bae46a8fe44d49e9a76f3ec",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-08-07T09:10:25.958551+00:00",
+      "src_ip": "63.133.226.150",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "e4cc9844574dec633d8adc474215159c",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-08-07T08:41:31.515826+00:00",
+      "src_ip": "63.133.226.150",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "e4cc9844574dec633d8adc474215159c",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-08-07T02:58:15.004565+00:00",
+      "src_ip": "36.64.10.42",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "014ae77d9d8126e805c49d8682b8bb37",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-08-07T02:12:06.673546+00:00",
+      "src_ip": "51.235.154.190",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "685bc2af410d86a742b59b96d116a7d9",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-08-07T02:11:54.245750+00:00",
+      "src_ip": "51.235.154.190",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "685bc2af410d86a742b59b96d116a7d9",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-08-06T16:28:04.519602+00:00",
+      "src_ip": "1.172.137.242",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "300200f5424cb7c0c95ff3ff36744153",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-06T07:54:08.162403+00:00",
       "src_ip": "202.183.226.58",
@@ -170,12 +247,36 @@
     }
   ],
   "samples": {
+    "014ae77d9d8126e805c49d8682b8bb37": {
+      "family": "trojan.wannacry/wanna",
+      "file_type": "",
+      "tags": "",
+      "first_seen": "",
+      "av_malicious": 61,
+      "av_total": 76
+    },
+    "300200f5424cb7c0c95ff3ff36744153": {
+      "family": "trojan.wannacry/wanna",
+      "file_type": "",
+      "tags": "",
+      "first_seen": "",
+      "av_malicious": 65,
+      "av_total": 76
+    },
     "4913bef3153a460ba000e20dfcfc6bd2": {
       "family": "ransomware.wanna/wannacry",
       "file_type": "",
       "tags": "",
       "first_seen": "",
       "av_malicious": 64,
+      "av_total": 75
+    },
+    "685bc2af410d86a742b59b96d116a7d9": {
+      "family": "trojan.njwxi",
+      "file_type": "dll",
+      "tags": "dll,OpenCTI.BR,Sandboxed",
+      "first_seen": "2022-07-20",
+      "av_malicious": 62,
       "av_total": 75
     },
     "6e72ad805b4322612b9c9c7673a45635": {
@@ -185,6 +286,14 @@
       "first_seen": "2022-12-26",
       "av_malicious": 61,
       "av_total": 75
+    },
+    "70af99279bae46a8fe44d49e9a76f3ec": {
+      "family": "trojan.wannacry/wanna",
+      "file_type": "",
+      "tags": "",
+      "first_seen": "",
+      "av_malicious": 68,
+      "av_total": 76
     },
     "723b91c399cba7396b7daff52b2309da": {
       "family": "trojan.wannacry/wanna",
@@ -207,7 +316,7 @@
       "file_type": "dll",
       "tags": "dll,OpenCTI.BR,Sandboxed",
       "first_seen": "2022-07-20",
-      "av_malicious": 61,
+      "av_malicious": 62,
       "av_total": 75
     },
     "8a5c14aab1e2795b31b55964e4583de0": {
@@ -257,6 +366,14 @@
       "first_seen": "2022-12-18",
       "av_malicious": 48,
       "av_total": 74
+    },
+    "e4cc9844574dec633d8adc474215159c": {
+      "family": "ransomware.wanna/wannacry",
+      "file_type": "",
+      "tags": "",
+      "first_seen": "",
+      "av_malicious": 66,
+      "av_total": 75
     },
     "f1864ad4bd7a190deb899a68a638f582": {
       "family": "trojan.wanna/cztf",
