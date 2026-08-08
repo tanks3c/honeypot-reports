@@ -1,6 +1,6 @@
 {
  "type": "bundle",
- "id": "bundle--1462a8c7-8af9-58fe-a3d1-432f0df7e828",
+ "id": "bundle--e6c35729-e1ee-55ac-9970-111d932dccd3",
  "objects": [
   {
    "type": "identity",
@@ -212,7 +212,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 38, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 33, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   },
   {
    "type": "indicator",
@@ -232,27 +232,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 45, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
-  },
-  {
-   "type": "indicator",
-   "spec_version": "2.1",
-   "id": "indicator--161910e9-32d4-5030-91ab-bf0066be6d33",
-   "created_by_ref": "identity--56747896-a6c5-59df-943e-2c2d1ca04780",
-   "created": "2026-01-01T00:00:00Z",
-   "modified": "2026-01-01T00:00:00Z",
-   "name": "spam source IP (suspicious)",
-   "pattern": "[ipv4-addr:value = '54.240.8.70']",
-   "pattern_type": "stix",
-   "valid_from": "2026-01-01T00:00:00Z",
-   "labels": [
-    "malicious-activity"
-   ],
-   "object_marking_refs": [
-    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
-   ],
-   "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 25, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 39, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   },
   {
    "type": "indicator",
@@ -272,7 +252,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 35, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 36, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   }
  ]
 }
