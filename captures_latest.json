@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-07T13:15:55.252521+00:00",
+  "generated": "2026-08-08T16:01:40.611746+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
@@ -272,11 +272,11 @@
       "av_total": 75
     },
     "685bc2af410d86a742b59b96d116a7d9": {
-      "family": "trojan.njwxi",
+      "family": "trojan.awcw/downloader25",
       "file_type": "dll",
       "tags": "dll,OpenCTI.BR,Sandboxed",
       "first_seen": "2022-07-20",
-      "av_malicious": 62,
+      "av_malicious": 60,
       "av_total": 75
     },
     "6e72ad805b4322612b9c9c7673a45635": {
@@ -356,7 +356,7 @@
       "file_type": "dll",
       "tags": "",
       "first_seen": "2023-03-24",
-      "av_malicious": 62,
+      "av_malicious": 63,
       "av_total": 75
     },
     "cd99e5e4f44621978faf8df0e01d2d2b": {
