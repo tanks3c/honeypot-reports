@@ -5,10 +5,19 @@
 # wazuh-analysis EC2 box (i-0436e7c3ab07a5307), NOT on homebase, because
 # wazuh_daily_report.py needs the Wazuh indexer on localhost:9200.
 #
+# PUBLISHING MODEL, as of 2026-08-09 (Option B): this box does NOT push.
+# It generates the report and commits it to local main only. Homebase then runs
+# ~/bin/relay_daily_report.sh (dionaea-report-relay.timer, 06:20/14:20/22:20 UTC),
+# pulls the committed report over SSM, pushes it to origin, and resets this box
+# to origin/main. Rationale: a deception-adjacent honeypot-account box must never
+# hold a credential that can rewrite published intel. Do NOT re-add `git push`
+# here, and do NOT install a deploy key on this box.
+#
 # Distinct exit codes so `systemctl status dionaea-report` triages instantly:
 #   78  repo is in a state this script must not touch (wedged / detached / wrong branch)
 #   1   report generation failed
-#   128 git push failed (historically: zeroed /home/ssm-user/.git-credentials)
+#   (128 is retired: the push step was removed 2026-08-09, so exit 128 from this
+#    unit now means something genuinely new, not the old credential fault.)
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -85,12 +94,7 @@ if git diff --quiet -- docs/daily-report.html; then
 else
   git add docs/daily-report.html
   git commit -m "Automated report update $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  if ! git push origin main; then
-    echo "ERROR: push failed. Commit is on local main and the repo is clean;"
-    echo "       it will go out on the next successful run. Check .git-credentials."
-    exit 128
-  fi
-  echo "pushed"
+  echo "committed to local main; homebase relay publishes it (no push from this box by design)"
 fi
 
 echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) run end ==="
