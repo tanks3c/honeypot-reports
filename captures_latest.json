@@ -1,8 +1,19 @@
 {
-  "generated": "2026-08-09T22:01:13.686213+00:00",
+  "generated": "2026-08-10T16:01:33.440392+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-10T13:58:30.416476+00:00",
+      "src_ip": "170.155.12.29",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "d88af4a1a1efa273fd33b262696f530e",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-09T10:21:07.394522+00:00",
       "src_ip": "106.51.5.19",
@@ -388,6 +399,14 @@
       "first_seen": "2022-12-18",
       "av_malicious": 48,
       "av_total": 74
+    },
+    "d88af4a1a1efa273fd33b262696f530e": {
+      "family": "WannaCry",
+      "file_type": "dll",
+      "tags": "dll,eternalblue,honeypot,smb,wannacry",
+      "first_seen": "2026-01-04",
+      "av_malicious": 66,
+      "av_total": 76
     },
     "e4cc9844574dec633d8adc474215159c": {
       "family": "ransomware.wanna/wannacry",
