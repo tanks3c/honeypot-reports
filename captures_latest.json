@@ -1,8 +1,30 @@
 {
-  "generated": "2026-08-10T22:00:26.902446+00:00",
+  "generated": "2026-08-11T04:01:48.324668+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-11T02:17:49.399238+00:00",
+      "src_ip": "36.78.107.183",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "a55b9addb2447db1882a3ae995a70151",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-08-11T00:34:14.506789+00:00",
+      "src_ip": "213.154.16.35",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "e4ac9ef45f1a18fefc32e02020c2a439",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-10T16:28:43.760682+00:00",
       "src_ip": "190.34.133.118",
@@ -387,6 +409,14 @@
       "av_malicious": 64,
       "av_total": 74
     },
+    "a55b9addb2447db1882a3ae995a70151": {
+      "family": "WannaCry",
+      "file_type": "dll",
+      "tags": "dll,OpenCTI.BR,Sandboxed",
+      "first_seen": "2022-07-20",
+      "av_malicious": 65,
+      "av_total": 75
+    },
     "ae12bb54af31227017feffd9598a6f5e": {
       "family": "WannaCry",
       "file_type": "dll",
@@ -400,7 +430,7 @@
       "file_type": "dll",
       "tags": "",
       "first_seen": "2023-03-24",
-      "av_malicious": 61,
+      "av_malicious": 62,
       "av_total": 75
     },
     "cd99e5e4f44621978faf8df0e01d2d2b": {
@@ -418,6 +448,14 @@
       "first_seen": "2026-01-04",
       "av_malicious": 66,
       "av_total": 76
+    },
+    "e4ac9ef45f1a18fefc32e02020c2a439": {
+      "family": "trojan.wanna/wannacry",
+      "file_type": "",
+      "tags": "",
+      "first_seen": "",
+      "av_malicious": 65,
+      "av_total": 74
     },
     "e4cc9844574dec633d8adc474215159c": {
       "family": "ransomware.wanna/wannacry",
