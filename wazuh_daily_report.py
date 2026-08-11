@@ -714,7 +714,11 @@ function renderDrill() {
     ? rows.filter(function (r) {
         // r.proto is the flattened plain-text list of every service label for
         // this IP, kept purely so the filter still matches "https" etc.
-        return (r.ip + ' ' + r.proto + ' ' + r.risk).toLowerCase().indexOf(q) !== -1;
+        // r.vtext is the plain-text verdict label (the Assessment cell itself
+        // is HTML and must never be fed to the filter).
+        return (r.ip + ' ' + r.proto + ' ' + r.risk + ' '
+                + r.country + ' ' + r.asn + ' ' + (r.vtext || ''))
+               .toLowerCase().indexOf(q) !== -1;
       })
     : rows;
   const badge = { high: 'badge-high', med: 'badge-med', low: 'badge-low' };
@@ -749,16 +753,21 @@ function renderDrill() {
         + '</span>';
     }
     if (!svcCell) svcCell = '<span style="color:#5e7385">-</span>';
+    // Column order below mirrors the "Top attacker IPs" table exactly
+    // (IP, Risk, Hits, Protocol, Assessment, Country, ASN) with First/Last
+    // seen appended. Abuse% and GreyNoise are NOT separate columns any more:
+    // they live inside the Assessment evidence sub-line and tooltip, the same
+    // collapse that was done to the Top attacker table on 2026-08-06.
     out += '<tr>'
       + '<td style="font-family:monospace;font-size:12px">' + r.ip + '</td>'
-      + '<td style="text-align:right;font-weight:600;font-size:12px">' + r.hits + '</td>'
+      + '<td><span class="' + badge[r.risk] + '">' + r.risk + '</span></td>'
+      + '<td style="font-weight:600;font-size:12px">' + r.hits + '</td>'
       + '<td style="line-height:1.7">' + svcCell + '</td>'
+      + '<td style="font-size:11px;line-height:1.35">' + (r.assess || '') + '</td>'
+      + '<td style="font-size:11px;color:#93a7b8">' + r.country + '</td>'
+      + '<td style="font-size:11px;color:#5e7385;font-family:monospace">' + r.asn + '</td>'
       + '<td style="font-size:11px;color:#93a7b8;font-family:monospace">' + firstCell + '</td>'
       + '<td style="font-size:11px;color:#93a7b8;font-family:monospace">' + r.last + '</td>'
-      + '<td><span class="' + badge[r.risk] + '">' + r.risk + '</span></td>'
-      + '<td style="font-size:11px;color:#93a7b8;text-align:center">' + r.country + '</td>'
-      + '<td style="font-size:11px;font-weight:600;text-align:right">' + r.abuse + '</td>'
-      + '<td style="font-size:11px;color:#93a7b8">' + r.gn + '</td>'
       + '</tr>';
   }
   document.getElementById('drill-rows').innerHTML = out;
@@ -1091,6 +1100,14 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
             "first": first.strftime("%m-%d %H:%M") if first else "",
             "last":  last.strftime("%m-%d %H:%M") if last else "",
             "risk":  risk,
+            # Same synthesized Assessment cell the Top attacker IPs table
+            # renders (badge + confidence + evidence sub-line + hover
+            # rationale), so the drill-down and the summary table cannot
+            # disagree about an IP. This is HTML; it is injected as innerHTML
+            # by renderDrill() and must never be fed to the text filter.
+            "assess":  _assessment_cell(rep),
+            # Plain-text verdict, filter fodder only.
+            "vtext":   rep.get("verdict") or "unrated",
             "country": rep.get("country") or "-",
             "abuse":   rep.get("abuse_score") if rep.get("abuse_score") is not None else "-",
             "gn":      rep.get("gn_classification", "-"),
@@ -1108,11 +1125,15 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
     highfreq_records = [_ip_record(ip, c) for ip, c in sorted(data["high_freq_ips"].items(), key=lambda x: -x[1])]
     scanner_records  = [_ip_record(ip, c) for ip, c in ip_counts.most_common() if c >= 50]
 
+    # The records now carry HTML (the Assessment cell), and this JSON is
+    # inlined into a <script> block. An unescaped "</" in that payload would
+    # let a rationale string containing "</script>" close the block early and
+    # blank the whole modal. "<\/" is identical inside a JS string literal.
     drill_data = json.dumps({
         "unique":   unique_records,
         "highfreq": highfreq_records,
         "scanners": scanner_records,
-    })
+    }).replace("</", "<\\/")
     DRILL_SCRIPT = _DRILL_SCRIPT_TEMPLATE.replace("__DRILL_DATA__", drill_data)
 
     # ---- Malware captured panel ----
@@ -1201,7 +1222,7 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
   /* Drill-down modal */
   .drill-overlay {{ display:none; position:fixed; inset:0; background:rgba(5,10,15,.7);
                     z-index:50; align-items:flex-start; justify-content:center; padding:6vh 16px; }}
-  .drill-modal {{ background:#13202c; border-radius:12px; width:100%; max-width:680px; max-height:84vh;
+  .drill-modal {{ background:#13202c; border-radius:12px; width:100%; max-width:1100px; max-height:84vh;
                   display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.5);
                   border:1px solid #223344; overflow:hidden; }}
   .drill-head {{ display:flex; align-items:flex-start; justify-content:space-between;
@@ -1215,8 +1236,27 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
                    background:#0d1620; color:#e7eef4;
                    font-size:13px; font-family:"IBM Plex Mono", ui-monospace, monospace; outline:none; }}
   .drill-filter:focus {{ border-color:#46b6c4; }}
-  .drill-body {{ overflow-y:auto; padding:8px 20px 12px; }}
-  .drill-table thead th {{ position:sticky; top:0; background:#13202c; z-index:1; }}
+  .drill-body {{ overflow-y:auto; overflow-x:auto; padding:8px 20px 12px; }}
+  /* The drill table carries the same 7 columns as "Top attacker IPs" plus
+     First/Last seen. Without table-layout:fixed the Assessment cell (long
+     verdict text) stole all the width and squeezed IP/Protocol into wrapped
+     slivers, and each category rendered different column widths because the
+     auto layout re-measured per dataset. Fixed layout + explicit per-column
+     widths + a min-width that the .drill-body scrolls horizontally keeps all
+     three drill-downs identical and aligned with the header row. */
+  .drill-table {{ table-layout:fixed; width:100%; min-width:940px; }}
+  .drill-table thead th {{ position:sticky; top:0; background:#13202c; z-index:1;
+                           white-space:nowrap; }}
+  .drill-table th, .drill-table td {{ vertical-align:top; overflow-wrap:anywhere; }}
+  .drill-table th:nth-child(1), .drill-table td:nth-child(1) {{ width:132px; }}
+  .drill-table th:nth-child(2), .drill-table td:nth-child(2) {{ width:46px;  text-align:center; }}
+  .drill-table th:nth-child(3), .drill-table td:nth-child(3) {{ width:52px;  text-align:right; }}
+  .drill-table th:nth-child(4), .drill-table td:nth-child(4) {{ width:150px; }}
+  .drill-table th:nth-child(5), .drill-table td:nth-child(5) {{ width:248px; }}
+  .drill-table th:nth-child(6), .drill-table td:nth-child(6) {{ width:62px;  text-align:center; }}
+  .drill-table th:nth-child(7), .drill-table td:nth-child(7) {{ width:78px; }}
+  .drill-table th:nth-child(8), .drill-table td:nth-child(8) {{ width:96px; }}
+  .drill-table th:nth-child(9), .drill-table td:nth-child(9) {{ width:96px; }}
   .drill-empty {{ padding:24px 20px; text-align:center; color:#5e7385; font-size:13px; }}
   @media (max-width: 640px) {{
     body {{ padding: 1rem; }}
@@ -1225,6 +1265,10 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
     .grid2 {{ grid-template-columns: 1fr; }}
     table {{ display: block; overflow-x: auto; white-space: nowrap; }}
     .drill-modal {{ max-width: 94vw; }}
+    /* Keep the drill table a real table on mobile: the generic rule above
+       turns tables into scrolling blocks, which kills both table-layout:fixed
+       and the sticky header. .drill-body already provides the x-scroll. */
+    .drill-table {{ display: table; white-space: normal; overflow-x: visible; }}
   }}
 </style>
 </head>
@@ -1381,25 +1425,32 @@ def build_html(data: dict, hours: int, log_path: str, enrichment: dict = None,
       </div>
       <button class="drill-x" onclick="closeDrill()" aria-label="Close">&times;</button>
     </div>
-    <input id="drill-filter" class="drill-filter" type="text" placeholder="Filter by IP, protocol, or risk..." oninput="renderDrill()">
+    <input id="drill-filter" class="drill-filter" type="text" placeholder="Filter by IP, protocol, risk, country, ASN, or verdict..." oninput="renderDrill()">
     <div class="drill-body">
       <table class="drill-table">
         <thead>
           <tr>
             <th>IP</th>
-            <th style="text-align:right">Hits</th>
-            <th>Services</th>
+            <th>Risk</th>
+            <th>Hits</th>
+            <th>Protocol</th>
+            <th>Assessment</th>
+            <th>Country</th>
+            <th>ASN</th>
             <th>First seen (UTC)</th>
             <th>Last seen (UTC)</th>
-            <th>Risk</th>
-            <th>Country</th>
-            <th>Abuse%</th>
-            <th>GreyNoise</th>
           </tr>
         </thead>
         <tbody id="drill-rows"></tbody>
       </table>
       <div id="drill-empty" class="drill-empty" style="display:none"></div>
+      <div style="font-size:10px;color:#5e7385;margin-top:8px;line-height:1.5">
+        <b>Assessment</b> is the same synthesized intel-enrich verdict shown in
+        Top attacker IPs: badge + confidence, corroborating evidence underneath,
+        full rationale on hover. <b>First/Last seen</b> are within this report
+        window; where the sightings ledger knows the IP, an "ever:" line gives
+        the true cross-sensor first-seen.
+      </div>
     </div>
   </div>
 </div>
