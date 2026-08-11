@@ -1,8 +1,30 @@
 {
-  "generated": "2026-08-11T04:01:48.324668+00:00",
+  "generated": "2026-08-11T10:00:12.307952+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-11T08:25:04.726847+00:00",
+      "src_ip": "182.9.36.216",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "a55b9addb2447db1882a3ae995a70151",
+      "size": null,
+      "sha256": null
+    },
+    {
+      "_ts": "2026-08-11T04:07:34.716485+00:00",
+      "src_ip": "183.196.83.213",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "d31d25eedd79f744b8a3d58888fd668b",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-11T02:17:49.399238+00:00",
       "src_ip": "36.78.107.183",
@@ -440,6 +462,14 @@
       "first_seen": "2022-12-18",
       "av_malicious": 48,
       "av_total": 74
+    },
+    "d31d25eedd79f744b8a3d58888fd668b": {
+      "family": "trojan.wannacry/wanna",
+      "file_type": "",
+      "tags": "",
+      "first_seen": "",
+      "av_malicious": 67,
+      "av_total": 76
     },
     "d88af4a1a1efa273fd33b262696f530e": {
       "family": "WannaCry",
