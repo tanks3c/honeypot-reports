@@ -1,6 +1,6 @@
 {
  "type": "bundle",
- "id": "bundle--cb238f6b-a5c6-5842-8490-f3ed9eb4884a",
+ "id": "bundle--e78e7584-cffd-55b9-9ed5-1a214405aa21",
  "objects": [
   {
    "type": "identity",
@@ -212,7 +212,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 33, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 35, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   },
   {
    "type": "indicator",
@@ -232,7 +232,47 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 39, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 33, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+  },
+  {
+   "type": "indicator",
+   "spec_version": "2.1",
+   "id": "indicator--fbebc733-f6cc-537b-aa15-f9e4e9be7812",
+   "created_by_ref": "identity--56747896-a6c5-59df-943e-2c2d1ca04780",
+   "created": "2026-01-01T00:00:00Z",
+   "modified": "2026-01-01T00:00:00Z",
+   "name": "spam source IP (suspicious)",
+   "pattern": "[ipv4-addr:value = '54.240.8.38']",
+   "pattern_type": "stix",
+   "valid_from": "2026-01-01T00:00:00Z",
+   "labels": [
+    "malicious-activity"
+   ],
+   "object_marking_refs": [
+    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
+   ],
+   "confidence": 40,
+   "description": "suspicious: AbuseIPDB score 27, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+  },
+  {
+   "type": "indicator",
+   "spec_version": "2.1",
+   "id": "indicator--161910e9-32d4-5030-91ab-bf0066be6d33",
+   "created_by_ref": "identity--56747896-a6c5-59df-943e-2c2d1ca04780",
+   "created": "2026-01-01T00:00:00Z",
+   "modified": "2026-01-01T00:00:00Z",
+   "name": "spam source IP (suspicious)",
+   "pattern": "[ipv4-addr:value = '54.240.8.70']",
+   "pattern_type": "stix",
+   "valid_from": "2026-01-01T00:00:00Z",
+   "labels": [
+    "malicious-activity"
+   ],
+   "object_marking_refs": [
+    "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
+   ],
+   "confidence": 40,
+   "description": "suspicious: AbuseIPDB score 35, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   },
   {
    "type": "indicator",
@@ -252,7 +292,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 36, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 37, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   }
  ]
 }
