@@ -104,22 +104,22 @@
 
 <h1>🍯 Dionaea Honeypot - Daily Probable Positives</h1>
 <div class="meta">
-  Window: 2026-08-16 06:02 UTC &rarr; 2026-08-17 06:02 UTC &nbsp;|&nbsp;
+  Window: 2026-08-16 14:01 UTC &rarr; 2026-08-17 14:01 UTC &nbsp;|&nbsp;
   Source: Wazuh indexer (wazuh-alerts-*) &nbsp;|&nbsp;
-  Generated: 2026-08-17 06:02:07 UTC
+  Generated: 2026-08-17 14:01:27 UTC
 </div>
 
 <!-- METRIC ROW -->
 <div class="grid5">
   <div class="card">
     <div class="metric-label">Total connections</div>
-    <div class="metric-value">0</div>
+    <div class="metric-value">11</div>
   </div>
   <div class="card card-click" role="button" tabindex="0"
        onclick="openDrill('unique')"
        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDrill('unique')}">
     <div class="metric-label">Unique attacker IPs</div>
-    <div class="metric-value info">0</div>
+    <div class="metric-value info">11</div>
     <div class="drill-hint">inspect &rsaquo;</div>
   </div>
   <div class="card card-click" role="button" tabindex="0"
@@ -146,14 +146,44 @@
 <div class="grid2">
   <div class="card">
     <h2>Protocol targeting</h2>
-    <table></table>
+    <table>
+        <tr>
+          <td style="width:70px;font-size:12px;color:#93a7b8">HTTP</td>
+          <td style="padding:4px 8px">
+            <div style="background:#223344;border-radius:3px;height:10px;overflow:hidden">
+              <div style="background:#46B6C4;width:100%;height:100%;border-radius:3px"></div>
+            </div>
+          </td>
+          <td style="width:40px;font-size:12px;text-align:right">7</td>
+          <td style="width:70px;font-size:11px;color:#5e7385;padding-left:8px">T1190</td>
+        </tr>
+        <tr>
+          <td style="width:70px;font-size:12px;color:#93a7b8">HTTPS</td>
+          <td style="padding:4px 8px">
+            <div style="background:#223344;border-radius:3px;height:10px;overflow:hidden">
+              <div style="background:#2FB37A;width:43%;height:100%;border-radius:3px"></div>
+            </div>
+          </td>
+          <td style="width:40px;font-size:12px;text-align:right">3</td>
+          <td style="width:70px;font-size:11px;color:#5e7385;padding-left:8px">T1190</td>
+        </tr>
+        <tr>
+          <td style="width:70px;font-size:12px;color:#93a7b8">FTP</td>
+          <td style="padding:4px 8px">
+            <div style="background:#223344;border-radius:3px;height:10px;overflow:hidden">
+              <div style="background:#F5A623;width:14%;height:100%;border-radius:3px"></div>
+            </div>
+          </td>
+          <td style="width:40px;font-size:12px;text-align:right">1</td>
+          <td style="width:70px;font-size:11px;color:#5e7385;padding-left:8px">T1190</td>
+        </tr></table>
   </div>
   <div class="card">
-    <h2>Hourly volume (last 0h)</h2>
+    <h2>Hourly volume (last 2h)</h2>
     <div class="timeline" id="tl"></div>
     <div style="display:flex;justify-content:space-between;font-size:10px;color:#5e7385;margin-top:4px">
-      <span></span>
-      <span></span>
+      <span>12:00</span>
+      <span>13:00</span>
     </div>
   </div>
 </div>
@@ -165,6 +195,133 @@
     <table>
       <tr><th>IP</th><th>Risk</th><th>Hits</th><th>Protocol</th><th>Assessment</th><th>Country</th><th>ASN</th></tr>
       
+        <tr>
+          <td style="font-family:monospace;font-size:12px">66.249.77.2</td>
+          <td style="text-align:center;font-size:14px">🟢</td>
+          <td style="text-align:right;font-size:12px;font-weight:600">1</td>
+          <td style="font-size:12px;color:#93a7b8">HTTP</td>
+          <td style="font-size:11px;line-height:1.35"><span style="color:#f5a623;font-weight:600;cursor:help" title="suspicious: a single source, below the 2-source bar for malicious
+- referenced in AlienVault OTX community threat pulses (17 pulses)  [https://otx.alienvault.com/]
+confidence = 40 base + 10x1 = 50
+AbuseIPDB score: 0
+GreyNoise: unknown
+listed by: otx
+first seen ever 2026-08-04 (all sensors, ledger since 2026-07-08); 2 hits over 2 day(s); sensors: dionaea">SUSPICIOUS</span><span style="color:#5e7385;font-weight:400"> 50%</span><div style="font-size:10px;color:#5e7385">1 source: otx</div></td>
+          <td style="font-size:12px;color:#93a7b8;text-align:center">US</td>
+          <td style="font-size:11px;color:#5e7385;font-family:monospace">AS15169</td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px">54.226.142.67</td>
+          <td style="text-align:center;font-size:14px">🟢</td>
+          <td style="text-align:right;font-size:12px;font-weight:600">1</td>
+          <td style="font-size:12px;color:#93a7b8">FTP</td>
+          <td style="font-size:11px;line-height:1.35"><span style="color:#5e7385;font-weight:600;cursor:help" title="no central intel-enrich verdict for this IP; local cache values only
+GreyNoise: unknown
+listed by: abuseipdb">UNRATED</span><div style="font-size:10px;color:#5e7385">no cached signals</div></td>
+          <td style="font-size:12px;color:#93a7b8;text-align:center">-</td>
+          <td style="font-size:11px;color:#5e7385;font-family:monospace">AS14618</td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px">124.156.157.91</td>
+          <td style="text-align:center;font-size:14px">🟢</td>
+          <td style="text-align:right;font-size:12px;font-weight:600">1</td>
+          <td style="font-size:12px;color:#93a7b8">HTTP</td>
+          <td style="font-size:11px;line-height:1.35"><span style="color:#5e7385;font-weight:600;cursor:help" title="no central intel-enrich verdict for this IP; local cache values only
+AbuseIPDB score: 100
+GreyNoise: unknown">UNRATED</span><div style="font-size:10px;color:#5e7385">abuse 100</div></td>
+          <td style="font-size:12px;color:#93a7b8;text-align:center">HK</td>
+          <td style="font-size:11px;color:#5e7385;font-family:monospace">AS132203</td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px">3.80.225.254</td>
+          <td style="text-align:center;font-size:14px">🟢</td>
+          <td style="text-align:right;font-size:12px;font-weight:600">1</td>
+          <td style="font-size:12px;color:#93a7b8">HTTP</td>
+          <td style="font-size:11px;line-height:1.35"><span style="color:#5e7385;font-weight:600;cursor:help" title="no central intel-enrich verdict for this IP; local cache values only
+GreyNoise: unknown">UNRATED</span><div style="font-size:10px;color:#5e7385">no cached signals</div></td>
+          <td style="font-size:12px;color:#93a7b8;text-align:center">-</td>
+          <td style="font-size:11px;color:#5e7385;font-family:monospace">AS14618</td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px">65.49.1.152</td>
+          <td style="text-align:center;font-size:14px">🟢</td>
+          <td style="text-align:right;font-size:12px;font-weight:600">1</td>
+          <td style="font-size:12px;color:#93a7b8">HTTP</td>
+          <td style="font-size:11px;line-height:1.35"><span style="color:#e5484d;font-weight:600;cursor:help" title="malicious: 4 independent sources corroborate
+- reported for abuse on AbuseIPDB (score 100)  [https://www.abuseipdb.com/]
+- listed on the FireHOL level1/level3 aggregate blocklist  [https://iplists.firehol.org/]
+- appears on multiple public blocklists (IPsum consensus) (5 lists agree)  [https://github.com/stamparm/ipsum]
+- referenced in AlienVault OTX community threat pulses (50 pulses)  [https://otx.alienvault.com/]
+confidence = 55 base + 15x4 independent sources = 95 (cap 95)
+AbuseIPDB score: 100
+GreyNoise: unknown
+listed by: abuseipdb, firehol, ipsum, otx
+open ports: 80
+first seen ever 2026-07-15 (all sensors, ledger since 2026-07-08); 16 hits over 6 day(s); sensors: dionaea">MALICIOUS</span><span style="color:#5e7385;font-weight:400"> 95%</span><div style="font-size:10px;color:#5e7385">4 sources: abuseipdb, firehol, ipsum +1 &middot; abuse 100</div></td>
+          <td style="font-size:12px;color:#93a7b8;text-align:center">US</td>
+          <td style="font-size:11px;color:#5e7385;font-family:monospace">AS6939</td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px">135.237.126.149</td>
+          <td style="text-align:center;font-size:14px">🟢</td>
+          <td style="text-align:right;font-size:12px;font-weight:600">1</td>
+          <td style="font-size:12px;color:#93a7b8">HTTP</td>
+          <td style="font-size:11px;line-height:1.35"><span style="color:#5e7385;font-weight:600;cursor:help" title="no central intel-enrich verdict for this IP; local cache values only
+GreyNoise: unknown">UNRATED</span><div style="font-size:10px;color:#5e7385">no cached signals</div></td>
+          <td style="font-size:12px;color:#93a7b8;text-align:center">-</td>
+          <td style="font-size:11px;color:#5e7385;font-family:monospace">AS8075</td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px">66.240.205.34</td>
+          <td style="text-align:center;font-size:14px">🟢</td>
+          <td style="text-align:right;font-size:12px;font-weight:600">1</td>
+          <td style="font-size:12px;color:#93a7b8">HTTP</td>
+          <td style="font-size:11px;line-height:1.35"><span style="color:#46b6c4;font-weight:600;cursor:help" title="matched a known research-scanner fingerprint (malware-hunter.census.shodan.io); scanners hit blocklists constantly, so this is flagged benign despite any listings
+- reported for abuse on AbuseIPDB (score 100)  [https://www.abuseipdb.com/]
+- listed on the FireHOL level1/level3 aggregate blocklist  [https://iplists.firehol.org/]
+- appears on multiple public blocklists (IPsum consensus) (4 lists agree)  [https://github.com/stamparm/ipsum]
+- referenced in AlienVault OTX community threat pulses (50 pulses)  [https://otx.alienvault.com/]
+- listed by Spamhaus (DROP / DQS zone)  [https://www.spamhaus.org/]
+- Spamhaus DQS DNSBL return codes 127.0.0.4  [https://www.spamhaus.org/]
+confidence = fixed 90 for a positive scanner match
+AbuseIPDB score: 100
+GreyNoise: unknown
+listed by: abuseipdb, firehol, ipsum, otx, spamhaus, spamhaus-dqs
+open ports: 22,111,9002
+first seen ever 2026-07-18 (all sensors, ledger since 2026-07-08); 12 hits over 12 day(s); sensors: dionaea">KNOWN SCANNER</span><span style="color:#5e7385;font-weight:400"> 90%</span><div style="font-size:10px;color:#5e7385">listings overridden, 5 sources: abuseipdb, firehol, ipsum +2 &middot; abuse 100</div></td>
+          <td style="font-size:12px;color:#93a7b8;text-align:center">US</td>
+          <td style="font-size:11px;color:#5e7385;font-family:monospace">AS10439</td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px">44.201.252.11</td>
+          <td style="text-align:center;font-size:14px">🟢</td>
+          <td style="text-align:right;font-size:12px;font-weight:600">1</td>
+          <td style="font-size:12px;color:#93a7b8">HTTPS</td>
+          <td style="font-size:11px;line-height:1.35"><span style="color:#5e7385;font-weight:600;cursor:help" title="no central intel-enrich verdict for this IP; local cache values only
+GreyNoise: unknown">UNRATED</span><div style="font-size:10px;color:#5e7385">no cached signals</div></td>
+          <td style="font-size:12px;color:#93a7b8;text-align:center">-</td>
+          <td style="font-size:11px;color:#5e7385;font-family:monospace">AS14618</td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px">54.221.75.112</td>
+          <td style="text-align:center;font-size:14px">🟢</td>
+          <td style="text-align:right;font-size:12px;font-weight:600">1</td>
+          <td style="font-size:12px;color:#93a7b8">HTTPS</td>
+          <td style="font-size:11px;line-height:1.35"><span style="color:#5e7385;font-weight:600;cursor:help" title="no central intel-enrich verdict for this IP; local cache values only
+GreyNoise: unknown">UNRATED</span><div style="font-size:10px;color:#5e7385">no cached signals</div></td>
+          <td style="font-size:12px;color:#93a7b8;text-align:center">-</td>
+          <td style="font-size:11px;color:#5e7385;font-family:monospace">AS14618</td>
+        </tr>
+        <tr>
+          <td style="font-family:monospace;font-size:12px">43.165.197.116</td>
+          <td style="text-align:center;font-size:14px">🟢</td>
+          <td style="text-align:right;font-size:12px;font-weight:600">1</td>
+          <td style="font-size:12px;color:#93a7b8">HTTP</td>
+          <td style="font-size:11px;line-height:1.35"><span style="color:#5e7385;font-weight:600;cursor:help" title="no central intel-enrich verdict for this IP; local cache values only
+GreyNoise: unknown">UNRATED</span><div style="font-size:10px;color:#5e7385">no cached signals</div></td>
+          <td style="font-size:12px;color:#93a7b8;text-align:center">-</td>
+          <td style="font-size:11px;color:#5e7385;font-family:monospace">AS132203</td>
+        </tr>
     </table>
     <div style="font-size:10px;color:#5e7385;margin-top:8px">🔴 ≥50 hits &nbsp; 🟡 ≥10 hits &nbsp; 🟢 &lt;10 hits</div>
     <div style="font-size:10px;color:#5e7385;margin-top:4px;line-height:1.5">
@@ -185,6 +342,72 @@
     <table>
       <tr><th>Time</th><th>Src IP</th><th>Protocol</th><th>Port</th></tr>
       
+        <tr>
+          <td style="font-size:11px;color:#93a7b8;font-family:monospace">13:33:07</td>
+          <td style="font-size:11px;font-family:monospace">66.249.77.2</td>
+          <td><span style="background:#46B6C422;color:#46B6C4;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">HTTP</span></td>
+          <td style="font-size:11px;color:#93a7b8">80</td>
+        </tr>
+        <tr>
+          <td style="font-size:11px;color:#93a7b8;font-family:monospace">13:07:35</td>
+          <td style="font-size:11px;font-family:monospace">135.237.126.149</td>
+          <td><span style="background:#46B6C422;color:#46B6C4;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">HTTP</span></td>
+          <td style="font-size:11px;color:#93a7b8">80</td>
+        </tr>
+        <tr>
+          <td style="font-size:11px;color:#93a7b8;font-family:monospace">13:00:13</td>
+          <td style="font-size:11px;font-family:monospace">124.156.157.91</td>
+          <td><span style="background:#46B6C422;color:#46B6C4;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">HTTP</span></td>
+          <td style="font-size:11px;color:#93a7b8">80</td>
+        </tr>
+        <tr>
+          <td style="font-size:11px;color:#93a7b8;font-family:monospace">12:58:23</td>
+          <td style="font-size:11px;font-family:monospace">43.165.197.116</td>
+          <td><span style="background:#46B6C422;color:#46B6C4;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">HTTP</span></td>
+          <td style="font-size:11px;color:#93a7b8">80</td>
+        </tr>
+        <tr>
+          <td style="font-size:11px;color:#93a7b8;font-family:monospace">12:43:45</td>
+          <td style="font-size:11px;font-family:monospace">65.49.1.152</td>
+          <td><span style="background:#46B6C422;color:#46B6C4;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">HTTP</span></td>
+          <td style="font-size:11px;color:#93a7b8">80</td>
+        </tr>
+        <tr>
+          <td style="font-size:11px;color:#93a7b8;font-family:monospace">12:13:57</td>
+          <td style="font-size:11px;font-family:monospace">66.240.205.34</td>
+          <td><span style="background:#46B6C422;color:#46B6C4;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">HTTP</span></td>
+          <td style="font-size:11px;color:#93a7b8">80</td>
+        </tr>
+        <tr>
+          <td style="font-size:11px;color:#93a7b8;font-family:monospace">12:13:56</td>
+          <td style="font-size:11px;font-family:monospace">54.226.142.67</td>
+          <td><span style="background:#F5A62322;color:#F5A623;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">FTP</span></td>
+          <td style="font-size:11px;color:#93a7b8">21</td>
+        </tr>
+        <tr>
+          <td style="font-size:11px;color:#93a7b8;font-family:monospace">12:13:42</td>
+          <td style="font-size:11px;font-family:monospace">54.221.75.112</td>
+          <td><span style="background:#2FB37A22;color:#2FB37A;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">HTTPS</span></td>
+          <td style="font-size:11px;color:#93a7b8">443</td>
+        </tr>
+        <tr>
+          <td style="font-size:11px;color:#93a7b8;font-family:monospace">12:13:37</td>
+          <td style="font-size:11px;font-family:monospace">3.80.225.254</td>
+          <td><span style="background:#46B6C422;color:#46B6C4;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">HTTP</span></td>
+          <td style="font-size:11px;color:#93a7b8">80</td>
+        </tr>
+        <tr>
+          <td style="font-size:11px;color:#93a7b8;font-family:monospace">12:13:31</td>
+          <td style="font-size:11px;font-family:monospace">3.93.81.46</td>
+          <td><span style="background:#2FB37A22;color:#2FB37A;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">HTTPS</span></td>
+          <td style="font-size:11px;color:#93a7b8">443</td>
+        </tr>
+        <tr>
+          <td style="font-size:11px;color:#93a7b8;font-family:monospace">12:12:35</td>
+          <td style="font-size:11px;font-family:monospace">44.201.252.11</td>
+          <td><span style="background:#2FB37A22;color:#2FB37A;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600">HTTPS</span></td>
+          <td style="font-size:11px;color:#93a7b8">443</td>
+        </tr>
     </table>
   </div>
 </div>
@@ -208,13 +431,13 @@
       <td style="font-family:monospace;font-size:12px">T1046</td>
       <td style="font-size:12px">Network Service Discovery</td>
       <td style="font-size:12px">Any inbound connection</td>
-      <td style="font-size:12px">0</td>
+      <td style="font-size:12px">11</td>
     </tr>
     <tr>
       <td style="font-family:monospace;font-size:12px">T1190</td>
       <td style="font-size:12px">Exploit Public-Facing Application</td>
       <td style="font-size:12px">HTTP, HTTPS, FTP, MySQL, MSSQL</td>
-      <td style="font-size:12px">0</td>
+      <td style="font-size:12px">11</td>
     </tr>
     <tr>
       <td style="font-family:monospace;font-size:12px">T1210</td>
@@ -285,7 +508,7 @@
 
 <script>
 
-const DRILL = {"unique": [], "highfreq": [], "scanners": []};
+const DRILL = {"unique": [{"ip": "66.249.77.2", "hits": 1, "svcs": [{"label": "HTTP", "color": "#46B6C4", "hits": 1}], "proto": "HTTP", "first": "08-17 13:33", "last": "08-17 13:33", "risk": "low", "assess": "<span style=\"color:#f5a623;font-weight:600;cursor:help\" title=\"suspicious: a single source, below the 2-source bar for malicious\n- referenced in AlienVault OTX community threat pulses (17 pulses)  [https://otx.alienvault.com/]\nconfidence = 40 base + 10x1 = 50\nAbuseIPDB score: 0\nGreyNoise: unknown\nlisted by: otx\nfirst seen ever 2026-08-04 (all sensors, ledger since 2026-07-08); 2 hits over 2 day(s); sensors: dionaea\">SUSPICIOUS<\/span><span style=\"color:#5e7385;font-weight:400\"> 50%<\/span><div style=\"font-size:10px;color:#5e7385\">1 source: otx<\/div>", "vtext": "suspicious", "country": "US", "abuse": 0, "gn": "unknown", "known_bad": 1, "asn": "AS15169", "hist_first": "2026-08-04", "hist_hits": 2, "hist_days": 2, "hist_sensors": "dionaea"}, {"ip": "54.226.142.67", "hits": 1, "svcs": [{"label": "FTP", "color": "#F5A623", "hits": 1}], "proto": "FTP", "first": "08-17 12:13", "last": "08-17 12:13", "risk": "low", "assess": "<span style=\"color:#5e7385;font-weight:600;cursor:help\" title=\"no central intel-enrich verdict for this IP; local cache values only\nGreyNoise: unknown\nlisted by: abuseipdb\">UNRATED<\/span><div style=\"font-size:10px;color:#5e7385\">no cached signals<\/div>", "vtext": "unrated", "country": "-", "abuse": "-", "gn": "unknown", "known_bad": 1, "asn": "AS14618", "hist_first": "", "hist_hits": null, "hist_days": null, "hist_sensors": ""}, {"ip": "124.156.157.91", "hits": 1, "svcs": [{"label": "HTTP", "color": "#46B6C4", "hits": 1}], "proto": "HTTP", "first": "08-17 13:00", "last": "08-17 13:00", "risk": "low", "assess": "<span style=\"color:#5e7385;font-weight:600;cursor:help\" title=\"no central intel-enrich verdict for this IP; local cache values only\nAbuseIPDB score: 100\nGreyNoise: unknown\">UNRATED<\/span><div style=\"font-size:10px;color:#5e7385\">abuse 100<\/div>", "vtext": "unrated", "country": "HK", "abuse": 100, "gn": "unknown", "known_bad": 0, "asn": "AS132203", "hist_first": "", "hist_hits": null, "hist_days": null, "hist_sensors": ""}, {"ip": "3.80.225.254", "hits": 1, "svcs": [{"label": "HTTP", "color": "#46B6C4", "hits": 1}], "proto": "HTTP", "first": "08-17 12:13", "last": "08-17 12:13", "risk": "low", "assess": "<span style=\"color:#5e7385;font-weight:600;cursor:help\" title=\"no central intel-enrich verdict for this IP; local cache values only\nGreyNoise: unknown\">UNRATED<\/span><div style=\"font-size:10px;color:#5e7385\">no cached signals<\/div>", "vtext": "unrated", "country": "-", "abuse": "-", "gn": "unknown", "known_bad": 0, "asn": "AS14618", "hist_first": "", "hist_hits": null, "hist_days": null, "hist_sensors": ""}, {"ip": "65.49.1.152", "hits": 1, "svcs": [{"label": "HTTP", "color": "#46B6C4", "hits": 1}], "proto": "HTTP", "first": "08-17 12:43", "last": "08-17 12:43", "risk": "low", "assess": "<span style=\"color:#e5484d;font-weight:600;cursor:help\" title=\"malicious: 4 independent sources corroborate\n- reported for abuse on AbuseIPDB (score 100)  [https://www.abuseipdb.com/]\n- listed on the FireHOL level1/level3 aggregate blocklist  [https://iplists.firehol.org/]\n- appears on multiple public blocklists (IPsum consensus) (5 lists agree)  [https://github.com/stamparm/ipsum]\n- referenced in AlienVault OTX community threat pulses (50 pulses)  [https://otx.alienvault.com/]\nconfidence = 55 base + 15x4 independent sources = 95 (cap 95)\nAbuseIPDB score: 100\nGreyNoise: unknown\nlisted by: abuseipdb, firehol, ipsum, otx\nopen ports: 80\nfirst seen ever 2026-07-15 (all sensors, ledger since 2026-07-08); 16 hits over 6 day(s); sensors: dionaea\">MALICIOUS<\/span><span style=\"color:#5e7385;font-weight:400\"> 95%<\/span><div style=\"font-size:10px;color:#5e7385\">4 sources: abuseipdb, firehol, ipsum +1 &middot; abuse 100<\/div>", "vtext": "malicious", "country": "US", "abuse": 100, "gn": "unknown", "known_bad": 1, "asn": "AS6939", "hist_first": "2026-07-15", "hist_hits": 16, "hist_days": 6, "hist_sensors": "dionaea"}, {"ip": "135.237.126.149", "hits": 1, "svcs": [{"label": "HTTP", "color": "#46B6C4", "hits": 1}], "proto": "HTTP", "first": "08-17 13:07", "last": "08-17 13:07", "risk": "low", "assess": "<span style=\"color:#5e7385;font-weight:600;cursor:help\" title=\"no central intel-enrich verdict for this IP; local cache values only\nGreyNoise: unknown\">UNRATED<\/span><div style=\"font-size:10px;color:#5e7385\">no cached signals<\/div>", "vtext": "unrated", "country": "-", "abuse": "-", "gn": "unknown", "known_bad": 0, "asn": "AS8075", "hist_first": "", "hist_hits": null, "hist_days": null, "hist_sensors": ""}, {"ip": "66.240.205.34", "hits": 1, "svcs": [{"label": "HTTP", "color": "#46B6C4", "hits": 1}], "proto": "HTTP", "first": "08-17 12:13", "last": "08-17 12:13", "risk": "low", "assess": "<span style=\"color:#46b6c4;font-weight:600;cursor:help\" title=\"matched a known research-scanner fingerprint (malware-hunter.census.shodan.io); scanners hit blocklists constantly, so this is flagged benign despite any listings\n- reported for abuse on AbuseIPDB (score 100)  [https://www.abuseipdb.com/]\n- listed on the FireHOL level1/level3 aggregate blocklist  [https://iplists.firehol.org/]\n- appears on multiple public blocklists (IPsum consensus) (4 lists agree)  [https://github.com/stamparm/ipsum]\n- referenced in AlienVault OTX community threat pulses (50 pulses)  [https://otx.alienvault.com/]\n- listed by Spamhaus (DROP / DQS zone)  [https://www.spamhaus.org/]\n- Spamhaus DQS DNSBL return codes 127.0.0.4  [https://www.spamhaus.org/]\nconfidence = fixed 90 for a positive scanner match\nAbuseIPDB score: 100\nGreyNoise: unknown\nlisted by: abuseipdb, firehol, ipsum, otx, spamhaus, spamhaus-dqs\nopen ports: 22,111,9002\nfirst seen ever 2026-07-18 (all sensors, ledger since 2026-07-08); 12 hits over 12 day(s); sensors: dionaea\">KNOWN SCANNER<\/span><span style=\"color:#5e7385;font-weight:400\"> 90%<\/span><div style=\"font-size:10px;color:#5e7385\">listings overridden, 5 sources: abuseipdb, firehol, ipsum +2 &middot; abuse 100<\/div>", "vtext": "benign-scanner", "country": "US", "abuse": 100, "gn": "unknown", "known_bad": 1, "asn": "AS10439", "hist_first": "2026-07-18", "hist_hits": 12, "hist_days": 12, "hist_sensors": "dionaea"}, {"ip": "44.201.252.11", "hits": 1, "svcs": [{"label": "HTTPS", "color": "#2FB37A", "hits": 1}], "proto": "HTTPS", "first": "08-17 12:12", "last": "08-17 12:12", "risk": "low", "assess": "<span style=\"color:#5e7385;font-weight:600;cursor:help\" title=\"no central intel-enrich verdict for this IP; local cache values only\nGreyNoise: unknown\">UNRATED<\/span><div style=\"font-size:10px;color:#5e7385\">no cached signals<\/div>", "vtext": "unrated", "country": "-", "abuse": "-", "gn": "unknown", "known_bad": 0, "asn": "AS14618", "hist_first": "", "hist_hits": null, "hist_days": null, "hist_sensors": ""}, {"ip": "54.221.75.112", "hits": 1, "svcs": [{"label": "HTTPS", "color": "#2FB37A", "hits": 1}], "proto": "HTTPS", "first": "08-17 12:13", "last": "08-17 12:13", "risk": "low", "assess": "<span style=\"color:#5e7385;font-weight:600;cursor:help\" title=\"no central intel-enrich verdict for this IP; local cache values only\nGreyNoise: unknown\">UNRATED<\/span><div style=\"font-size:10px;color:#5e7385\">no cached signals<\/div>", "vtext": "unrated", "country": "-", "abuse": "-", "gn": "unknown", "known_bad": 0, "asn": "AS14618", "hist_first": "", "hist_hits": null, "hist_days": null, "hist_sensors": ""}, {"ip": "43.165.197.116", "hits": 1, "svcs": [{"label": "HTTP", "color": "#46B6C4", "hits": 1}], "proto": "HTTP", "first": "08-17 12:58", "last": "08-17 12:58", "risk": "low", "assess": "<span style=\"color:#5e7385;font-weight:600;cursor:help\" title=\"no central intel-enrich verdict for this IP; local cache values only\nGreyNoise: unknown\">UNRATED<\/span><div style=\"font-size:10px;color:#5e7385\">no cached signals<\/div>", "vtext": "unrated", "country": "-", "abuse": "-", "gn": "unknown", "known_bad": 0, "asn": "AS132203", "hist_first": "", "hist_hits": null, "hist_days": null, "hist_sensors": ""}, {"ip": "3.93.81.46", "hits": 1, "svcs": [{"label": "HTTPS", "color": "#2FB37A", "hits": 1}], "proto": "HTTPS", "first": "08-17 12:13", "last": "08-17 12:13", "risk": "low", "assess": "<span style=\"color:#e5484d;font-weight:600;cursor:help\" title=\"malicious: 4 independent sources corroborate\n- reported for abuse on AbuseIPDB (score 100)  [https://www.abuseipdb.com/]\n- listed on the FireHOL level1/level3 aggregate blocklist  [https://iplists.firehol.org/]\n- appears on multiple public blocklists (IPsum consensus) (4 lists agree)  [https://github.com/stamparm/ipsum]\n- referenced in AlienVault OTX community threat pulses (6 pulses)  [https://otx.alienvault.com/]\nconfidence = 55 base + 15x4 independent sources = 95 (cap 95)\nAbuseIPDB score: 100\nGreyNoise: unknown\nlisted by: abuseipdb, firehol, ipsum, otx\nfirst seen ever 2026-08-09 (all sensors, ledger since 2026-07-08); 2 hits over 2 day(s); sensors: dionaea\">MALICIOUS<\/span><span style=\"color:#5e7385;font-weight:400\"> 95%<\/span><div style=\"font-size:10px;color:#5e7385\">4 sources: abuseipdb, firehol, ipsum +1 &middot; abuse 100<\/div>", "vtext": "malicious", "country": "US", "abuse": 100, "gn": "unknown", "known_bad": 1, "asn": "AS14618", "hist_first": "2026-08-09", "hist_hits": 2, "hist_days": 2, "hist_sensors": "dionaea"}], "highfreq": [], "scanners": []};
 const DRILL_META = {
   unique:   { title: 'Unique attacker IPs' },
   highfreq: { title: 'High-frequency IPs (5+ hits)' },
@@ -393,7 +616,7 @@ document.addEventListener('keydown', function (e) {
 </script>
 
 <script>
-const bars = [];
+const bars = [{"h": "2026-08-17 12:00", "c": 8}, {"h": "2026-08-17 13:00", "c": 3}];
 const max  = Math.max(...bars.map(b => b.c), 1);
 const tl   = document.getElementById('tl');
 bars.forEach(b => {
