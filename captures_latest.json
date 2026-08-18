@@ -1,8 +1,19 @@
 {
-  "generated": "2026-08-18T10:01:37.653963+00:00",
+  "generated": "2026-08-18T16:02:28.724336+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-18T15:23:51.826974+00:00",
+      "src_ip": "88.247.3.101",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "ae12bb54af31227017feffd9598a6f5e",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-18T09:37:20.679387+00:00",
       "src_ip": "5.215.19.210",
@@ -482,7 +493,7 @@
       "file_type": "dll",
       "tags": "",
       "first_seen": "2023-03-24",
-      "av_malicious": 63,
+      "av_malicious": 61,
       "av_total": 75
     },
     "cd99e5e4f44621978faf8df0e01d2d2b": {
@@ -538,7 +549,7 @@
       "file_type": "dll",
       "tags": "Meterpreter",
       "first_seen": "2023-03-24",
-      "av_malicious": 63,
+      "av_malicious": 62,
       "av_total": 75
     }
   }
