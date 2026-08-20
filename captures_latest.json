@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-20T04:00:48.547189+00:00",
+  "generated": "2026-08-20T22:02:35.432113+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
@@ -512,7 +512,7 @@
       "file_type": "dll",
       "tags": "",
       "first_seen": "2023-03-24",
-      "av_malicious": 63,
+      "av_malicious": 60,
       "av_total": 75
     },
     "cd99e5e4f44621978faf8df0e01d2d2b": {
