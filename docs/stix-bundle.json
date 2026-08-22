@@ -1,6 +1,6 @@
 {
  "type": "bundle",
- "id": "bundle--2f7e3562-4e7d-5b2f-86d9-296117a2615f",
+ "id": "bundle--b3fa48c0-ac6a-5192-964c-e8dffcf24edf",
  "objects": [
   {
    "type": "identity",
@@ -212,7 +212,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 35, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 40, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   },
   {
    "type": "indicator",
@@ -232,7 +232,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 33, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 36, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   },
   {
    "type": "indicator",
@@ -252,7 +252,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 27, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 35, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   },
   {
    "type": "indicator",
@@ -292,7 +292,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 37, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 38, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   }
  ]
 }
