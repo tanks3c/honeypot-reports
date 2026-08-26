@@ -1,8 +1,19 @@
 {
-  "generated": "2026-08-25T10:01:49.143060+00:00",
+  "generated": "2026-08-26T10:02:41.594246+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-26T08:19:24.013573+00:00",
+      "src_ip": "85.9.94.114",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "8f09ba181469ab1655008aa959887457",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-24T01:59:33.388053+00:00",
       "src_ip": "88.204.254.197",
@@ -570,6 +581,14 @@
       "av_malicious": 68,
       "av_total": 76
     },
+    "8f09ba181469ab1655008aa959887457": {
+      "family": "trojan.wanna/wannacry",
+      "file_type": "",
+      "tags": "",
+      "first_seen": "",
+      "av_malicious": 64,
+      "av_total": 75
+    },
     "996c2b2ca30180129c69352a3a3515e4": {
       "family": "WannaCry",
       "file_type": "dll",
@@ -599,7 +618,7 @@
       "file_type": "dll",
       "tags": "",
       "first_seen": "2023-03-24",
-      "av_malicious": 54,
+      "av_malicious": 63,
       "av_total": 75
     },
     "cd99e5e4f44621978faf8df0e01d2d2b": {
@@ -655,7 +674,7 @@
       "file_type": "dll",
       "tags": "Meterpreter",
       "first_seen": "2023-03-24",
-      "av_malicious": 64,
+      "av_malicious": 62,
       "av_total": 75
     }
   }
