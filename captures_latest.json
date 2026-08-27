@@ -1,8 +1,19 @@
 {
-  "generated": "2026-08-26T16:00:10.457798+00:00",
+  "generated": "2026-08-27T11:44:45.106110+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-26T16:00:06.479720+00:00",
+      "src_ip": "14.224.187.125",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "33d373e264dc7fdb0bcdbd8e075a6319",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-26T13:06:20.740777+00:00",
       "src_ip": "14.236.212.254",
@@ -488,6 +499,14 @@
       "av_malicious": 65,
       "av_total": 76
     },
+    "33d373e264dc7fdb0bcdbd8e075a6319": {
+      "family": "WannaCry",
+      "file_type": "dll",
+      "tags": "dll,eternalblue,honeypot,smb,wannacry",
+      "first_seen": "2026-01-04",
+      "av_malicious": 65,
+      "av_total": 75
+    },
     "4913bef3153a460ba000e20dfcfc6bd2": {
       "family": "ransomware.wanna/wannacry",
       "file_type": "",
@@ -693,7 +712,7 @@
       "file_type": "dll",
       "tags": "Meterpreter",
       "first_seen": "2023-03-24",
-      "av_malicious": 62,
+      "av_malicious": 64,
       "av_total": 75
     }
   }
