@@ -1,8 +1,19 @@
 {
-  "generated": "2026-08-27T16:00:39.629613+00:00",
+  "generated": "2026-08-28T16:00:19.165453+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-28T09:56:51.233089+00:00",
+      "src_ip": "92.82.192.66",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "95ae8e32eb8635e7eabe14ffbfaa777b",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-27T11:58:38.662178+00:00",
       "src_ip": "186.48.66.168",
@@ -638,6 +649,14 @@
       "av_malicious": 64,
       "av_total": 75
     },
+    "95ae8e32eb8635e7eabe14ffbfaa777b": {
+      "family": "WannaCry",
+      "file_type": "dll",
+      "tags": "dll,eternalblue,honeypot,smb,wannacry",
+      "first_seen": "2026-01-04",
+      "av_malicious": 68,
+      "av_total": 76
+    },
     "996c2b2ca30180129c69352a3a3515e4": {
       "family": "WannaCry",
       "file_type": "dll",
@@ -707,7 +726,7 @@
       "file_type": "",
       "tags": "",
       "first_seen": "",
-      "av_malicious": 62,
+      "av_malicious": 65,
       "av_total": 75
     },
     "e4cc9844574dec633d8adc474215159c": {
