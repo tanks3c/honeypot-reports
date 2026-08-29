@@ -1,8 +1,19 @@
 {
-  "generated": "2026-08-28T16:00:19.165453+00:00",
+  "generated": "2026-08-29T04:02:44.356740+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-08-29T03:59:25.604726+00:00",
+      "src_ip": "8.26.240.98",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "0a4415cf8f2ef9b6359ac5b4040f77b7",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-08-28T09:56:51.233089+00:00",
       "src_ip": "92.82.192.66",
@@ -495,6 +506,14 @@
       "tags": "",
       "first_seen": "",
       "av_malicious": 61,
+      "av_total": 76
+    },
+    "0a4415cf8f2ef9b6359ac5b4040f77b7": {
+      "family": "trojan.wannacry/wanna",
+      "file_type": "",
+      "tags": "",
+      "first_seen": "",
+      "av_malicious": 68,
       "av_total": 76
     },
     "0ab2aeda90221832167e5127332dd702": {
