@@ -1,6 +1,6 @@
 {
  "type": "bundle",
- "id": "bundle--e8bc82d7-8c8c-5ab8-8f25-1140071d4ad8",
+ "id": "bundle--9fb4f66f-5ac5-5443-8b7a-74fea9a4fab4",
  "objects": [
   {
    "type": "identity",
@@ -212,7 +212,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 40, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 34, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   },
   {
    "type": "indicator",
@@ -232,7 +232,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 36, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 31, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   },
   {
    "type": "indicator",
@@ -252,7 +252,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 35, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 36, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   },
   {
    "type": "indicator",
@@ -272,7 +272,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 35, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 34, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   },
   {
    "type": "indicator",
@@ -292,7 +292,7 @@
     "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
    ],
    "confidence": 40,
-   "description": "suspicious: AbuseIPDB score 38, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
+   "description": "suspicious: AbuseIPDB score 33, below the 2-source bar for malicious. Confidence: 40 base + 10x0 = 40."
   }
  ]
 }
