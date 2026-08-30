@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-30T04:02:21.394429+00:00",
+  "generated": "2026-08-30T16:03:01.862601+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
@@ -604,7 +604,7 @@
       "file_type": "dll",
       "tags": "dll,OpenCTI.BR,Sandboxed",
       "first_seen": "2022-07-20",
-      "av_malicious": 60,
+      "av_malicious": 59,
       "av_total": 75
     },
     "6e72ad805b4322612b9c9c7673a45635": {
