@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-31T22:02:31.158839+00:00",
+  "generated": "2026-09-02T04:01:29.323524+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
@@ -586,8 +586,8 @@
       "file_type": "dll",
       "tags": "dll,eternalblue,honeypot,smb,wannacry",
       "first_seen": "2026-01-04",
-      "av_malicious": 65,
-      "av_total": 75
+      "av_malicious": 66,
+      "av_total": 74
     },
     "4913bef3153a460ba000e20dfcfc6bd2": {
       "family": "ransomware.wanna/wannacry",
@@ -810,7 +810,7 @@
       "file_type": "dll",
       "tags": "Meterpreter",
       "first_seen": "2023-03-24",
-      "av_malicious": 63,
+      "av_malicious": 64,
       "av_total": 75
     }
   }
