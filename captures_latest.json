@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-05T22:01:11.379259+00:00",
+  "generated": "2026-09-06T22:01:54.881086+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
@@ -626,8 +626,8 @@
       "file_type": "dll",
       "tags": "dll,OpenCTI.BR,Sandboxed",
       "first_seen": "2022-07-20",
-      "av_malicious": 59,
-      "av_total": 75
+      "av_malicious": 60,
+      "av_total": 74
     },
     "6e72ad805b4322612b9c9c7673a45635": {
       "family": "WannaCry",
@@ -794,8 +794,8 @@
       "file_type": "dll",
       "tags": "dll,exe,WannaCry",
       "first_seen": "2025-01-15",
-      "av_malicious": 57,
-      "av_total": 75
+      "av_malicious": 64,
+      "av_total": 73
     },
     "f1864ad4bd7a190deb899a68a638f582": {
       "family": "trojan.wanna/cztf",
@@ -810,7 +810,7 @@
       "file_type": "dll",
       "tags": "Meterpreter",
       "first_seen": "2023-03-24",
-      "av_malicious": 64,
+      "av_malicious": 65,
       "av_total": 75
     }
   }
