@@ -139,7 +139,7 @@ Verifying regenerates the public malware page and pushes.</p>
 {''.join(rows) or '<tr><td colspan="6" class="dim">no captures yet</td></tr>'}
 </table>
 <p class="dim mono" style="margin-top:20px;font-size:.78rem">
-public page: <a href="https://pumpkinescobar.github.io/honeypot-reports/malware.html">malware.html</a>
+public page: <a href="https://tanks3c.github.io/honeypot-reports/malware.html">malware.html</a>
 &middot; CLI: python3 review_samples.py</p>"""
     return page("review console // captured samples", body)
 
