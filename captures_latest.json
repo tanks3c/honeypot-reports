@@ -1,8 +1,19 @@
 {
-  "generated": "2026-09-12T16:01:59.145030+00:00",
+  "generated": "2026-09-12T22:00:44.132549+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
+    {
+      "_ts": "2026-09-12T16:16:42.898314+00:00",
+      "src_ip": "190.201.238.227",
+      "dst_port": 445,
+      "transport": "tcp",
+      "protocol": "smbd",
+      "url": "",
+      "md5": "deb325e8abdc40839505e7ca4e19f9dc",
+      "size": null,
+      "sha256": null
+    },
     {
       "_ts": "2026-09-12T15:39:33.771170+00:00",
       "src_ip": "154.118.24.100",
@@ -783,6 +794,14 @@
       "first_seen": "2026-01-04",
       "av_malicious": 66,
       "av_total": 76
+    },
+    "deb325e8abdc40839505e7ca4e19f9dc": {
+      "family": "ransomware.wanna/wannacry",
+      "file_type": "",
+      "tags": "",
+      "first_seen": "",
+      "av_malicious": 65,
+      "av_total": 75
     },
     "e4ac9ef45f1a18fefc32e02020c2a439": {
       "family": "trojan.wanna/wannacry",
