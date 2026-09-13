@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-12T22:00:44.132549+00:00",
+  "generated": "2026-09-13T16:02:42.886553+00:00",
   "source": "dionaea-sqlite",
   "instance_id": "i-06e3b2d67ba6b15a1",
   "captures": [
@@ -752,7 +752,7 @@
       "file_type": "dll",
       "tags": "dll,Wannacry",
       "first_seen": "2022-12-22",
-      "av_malicious": 66,
+      "av_malicious": 65,
       "av_total": 75
     },
     "bdcaf7ef34cd9b02932e5ee2297e4893": {
@@ -768,7 +768,7 @@
       "file_type": "dll",
       "tags": "",
       "first_seen": "2023-03-24",
-      "av_malicious": 63,
+      "av_malicious": 62,
       "av_total": 75
     },
     "cd99e5e4f44621978faf8df0e01d2d2b": {
