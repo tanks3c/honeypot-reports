@@ -159,6 +159,26 @@
     "reviewed_on": null,
     "status": "pending_review"
   },
+  "34c07578d4634e0af6f7d87b3413a679": {
+    "auto": {
+      "av_malicious": 65,
+      "av_total": 76,
+      "family": "WannaCry",
+      "file_type": "dll",
+      "first_seen": "2026-01-04",
+      "tags": "dll,eternalblue,honeypot,smb,wannacry"
+    },
+    "family": "WannaCry",
+    "file_type": "dll",
+    "first_flagged": "2026-09-15T16:03:46+00:00",
+    "mitre": [
+      "T1190",
+      "T1105"
+    ],
+    "notes": "AUTO: SMB/445 inline drop (no URL). Mapped T1190 (internet-facing service exploited, initial access) + T1105 (payload transfer). T1210 applies only as worm propagation context. Verify family/mapping and edit as needed.",
+    "reviewed_on": null,
+    "status": "pending_review"
+  },
   "4913bef3153a460ba000e20dfcfc6bd2": {
     "auto": {
       "av_malicious": 65,
@@ -689,6 +709,26 @@
     "family": "ransomware.wanna/wannacry",
     "file_type": "",
     "first_flagged": "2026-08-07T13:20:31+00:00",
+    "mitre": [
+      "T1190",
+      "T1105"
+    ],
+    "notes": "AUTO: SMB/445 inline drop (no URL). Mapped T1190 (internet-facing service exploited, initial access) + T1105 (payload transfer). T1210 applies only as worm propagation context. Verify family/mapping and edit as needed.",
+    "reviewed_on": null,
+    "status": "pending_review"
+  },
+  "e9d1ba0ee54fcdf37cf458cd3209c9f3": {
+    "auto": {
+      "av_malicious": 67,
+      "av_total": 76,
+      "family": "WannaCry",
+      "file_type": "dll",
+      "first_seen": "2022-07-20",
+      "tags": "dll,OpenCTI.BR,Sandboxed"
+    },
+    "family": "WannaCry",
+    "file_type": "dll",
+    "first_flagged": "2026-09-15T16:03:46+00:00",
     "mitre": [
       "T1190",
       "T1105"
